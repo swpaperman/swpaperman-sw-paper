@@ -1,0 +1,6 @@
+{
+  "name": "수원지관산업",
+  "description": "60년 전통의 국내 굴지 탄약 포장용 지환통 및 방산 군수포장 전문 기업 주식회사 수원지관산업입니다.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

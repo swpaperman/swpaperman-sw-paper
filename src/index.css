@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300..800;1,300..800&family=Space+Grotesk:wght@300..700&family=JetBrains+Mono:wght@300..700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", "Pretendard", "Malgun Gothic", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Pretendard", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-military-50: #f4f6f3;
+  --color-military-100: #e5ebe4;
+  --color-military-200: #ccd8ca;
+  --color-military-300: #9fb49c;
+  --color-military-400: #748e71;
+  --color-military-500: #4a634e;
+  --color-military-600: #384c3c;
+  --color-military-700: #29382c;
+  --color-military-800: #1b261d;
+  --color-military-850: #141d16;
+  --color-military-900: #0f1510;
+  --color-military-950: #060a07;
+
+  --color-kraft-50: #faf8f5;
+  --color-kraft-100: #f3ede2;
+  --color-kraft-200: #e6dac7;
+  --color-kraft-300: #dabf96;
+  --color-kraft-350: #cdab7e;
+  --color-kraft-400: #c09765;
+  --color-kraft-500: #c49861;
+  --color-kraft-600: #a57842;
+  --color-kraft-700: #865d2f;
+  --color-kraft-800: #62431f;
+  --color-kraft-900: #3e2a14;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: var(--font-sans);
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  background-color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure images and media fit within containers nicely without bleeding */
+img, video, canvas, svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Custom fade scroll effects or blueprints grid */
+.tech-grid {
+  background-size: 24px 24px;
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+}
+
+.tech-grid-dark {
+  background-size: 24px 24px;
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+}
+
