@@ -680,25 +680,37 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
               <table className="w-full text-left border-collapse text-xs sm:text-sm">
                 <thead>
                   <tr className="bg-gray-100/80 border-b border-gray-150 text-gray-700 font-bold uppercase tracking-wider">
-                    <th className="py-3 px-4 sm:px-6 w-1/2">{language === "ko" ? "국방 규격 / 납품 모델명" : language === "tr" ? "Ürün Adı ve Şartname" : "Product Designation & Spec Name"}</th>
-                    <th className="py-3 px-4 w-1/4 sm:w-1/5">{language === "ko" ? "분 류 테 그" : "Classification"}</th>
-                    <th className="py-3 px-4 text-center w-24 sm:w-28">{language === "ko" ? "개 발 년 도" : language === "tr" ? "Tasarım Yılı" : "R&D Year"}</th>
-                    <th className="py-3 px-4 text-center sm:text-left w-28 sm:w-36">{language === "ko" ? "생 산 및 양 산" : language === "tr" ? "İmalat Durumu" : "Active Production"}</th>
+                    <th className="py-3 px-4 sm:px-6 w-2/3 sm:w-1/2">{language === "ko" ? "국방 규격 / 납품 모델명" : language === "tr" ? "Ürün Adı ve Şartname" : "Product Designation & Spec Name"}</th>
+                    <th className="hidden sm:table-cell py-3 px-4 w-1/4 sm:w-1/5">{language === "ko" ? "분 류 테 그" : "Classification"}</th>
+                    <th className="py-3 px-4 text-center w-1/3 sm:w-28">{language === "ko" ? "개 발 년 도" : language === "tr" ? "Tasarım Yılı" : "R&D Year"}</th>
+                    <th className="hidden sm:table-cell py-3 px-4 text-center sm:text-left w-28 sm:w-36">{language === "ko" ? "생 산 및 양 산" : language === "tr" ? "İmalat Durumu" : "Active Production"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-gray-650 font-normal leading-relaxed">
                   {filteredHistory.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="py-16 text-center text-gray-400 font-normal">
-                        <Info className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                        <span className="block text-xs font-semibold text-gray-500">
-                          {language === "ko" ? "일치하는 군수 규격 이력이 검색되지 않았습니다." : "No spec histories found matching your query."}
-                        </span>
-                        <span className="block text-[10px] text-gray-400 mt-1">
-                          {language === "ko" ? "철자나 검색어를 확인하시거나 다른 탭을 활용해 보세요." : "Check details or select 'Full History'."}
-                        </span>
-                      </td>
-                    </tr>
+                    <>
+                      {/* Mobile Alert */}
+                      <tr className="sm:hidden">
+                        <td colSpan={2} className="py-16 text-center text-gray-400 font-normal">
+                          <Info className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          <span className="block text-xs font-semibold text-gray-500">
+                            {language === "ko" ? "일치하는 군수 규격 이력이 검색되지 않았습니다." : "No spec histories found matching your query."}
+                          </span>
+                        </td>
+                      </tr>
+                      {/* Desktop Alert */}
+                      <tr className="hidden sm:table-row">
+                        <td colSpan={4} className="py-16 text-center text-gray-400 font-normal">
+                          <Info className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          <span className="block text-xs font-semibold text-gray-500">
+                            {language === "ko" ? "일치하는 군수 규격 이력이 검색되지 않았습니다." : "No spec histories found matching your query."}
+                          </span>
+                          <span className="block text-[10px] text-gray-400 mt-1">
+                            {language === "ko" ? "철자나 검색어를 확인하시거나 다른 탭을 활용해 보세요." : "Check details or select 'Full History'."}
+                          </span>
+                        </td>
+                      </tr>
+                    </>
                   ) : (
                     filteredHistory.map((item, idx) => {
                       const badgeInfo = getSubBadge(item.devYear, item.name);
@@ -728,24 +740,24 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
                           <td className="py-3 px-4 sm:px-6 font-bold text-gray-850">
                             <div className="flex items-center gap-2">
                               <Bookmark className="w-3.5 h-3.5 text-military-500 shrink-0" />
-                              <span className="tracking-tight">{item.name}</span>
+                              <span className="tracking-tight text-left block leading-tight">{item.name}</span>
                             </div>
                           </td>
 
                           {/* Dynamic Technical Classification Tag */}
-                          <td className="py-3 px-4">
+                          <td className="hidden sm:table-cell py-3 px-4">
                             <span className={`inline-block text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-tight ${badgeInfo.classes}`}>
                               {badgeInfo.text}
                             </span>
                           </td>
 
                           {/* Development Year */}
-                          <td className="py-3 px-4 text-center font-mono text-gray-500 text-xs font-medium">
+                          <td className="py-3 px-4 text-center font-mono text-gray-500 text-xs font-semibold whitespace-nowrap">
                             {item.devYear}
                           </td>
 
                           {/* Active Production Status */}
-                          <td className="py-3 px-4 text-center sm:text-left">
+                          <td className="hidden sm:table-cell py-3 px-4 text-center sm:text-left">
                             {isActive ? (
                               isPre2008 ? (
                                 <span className="inline-flex items-center gap-1.5 bg-military-50 text-military-850 border border-military-200 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-tight">
