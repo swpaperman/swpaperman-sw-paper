@@ -153,38 +153,56 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
   useEffect(() => {
     let isMounted = true;
 
-    const checkAndSeed = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "stocks"));
-        if (querySnapshot.empty && isMounted) {
-          // If completely empty, push the 5 defaults at once
-          await Promise.all(
-            DEFAULT_STOCKS.map((item) => setDoc(doc(db, "stocks", item.id), item))
-          );
+    const unsubscribe = onSnapshot(
+      collection(db, "stocks"),
+      async (snapshot) => {
+        if (!isMounted) return;
+
+        if (snapshot.empty) {
+          // If Firestore is confirmed completely empty on the server, seed the defaults
+          if (!snapshot.metadata.fromCache) {
+            try {
+              await Promise.all(
+                DEFAULT_STOCKS.map((item) => setDoc(doc(db, "stocks", item.id), item))
+              );
+            } catch (err) {
+              console.error("Failed to seed default stocks to Firestore:", err);
+            }
+          } else {
+            // If empty but from cache (still connecting), keep showing defaults so it's not a blank page
+            setStocks(DEFAULT_STOCKS);
+          }
+        } else {
+          const list: StockItem[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            list.push({
+              id: docSnap.id,
+              name: data.name || "",
+              innerDia: data.innerDia || "",
+              thickness: data.thickness || "",
+              length: data.length || "",
+              quantity: data.quantity || "",
+              condition: data.condition || "우수",
+              approxPrice: data.approxPrice || "상담 협의",
+              imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1589793907316-f9d994350c3e?auto=format&fit=crop&q=80&w=650",
+              imageUrls: data.imageUrls || [],
+              desc: data.desc || ""
+            });
+          });
+          // Sort stock items by ID so they stay structured beautifully
+          list.sort((a, b) => a.id.localeCompare(b.id));
+          setStocks(list);
         }
-      } catch (err) {
-        console.error("Failed to check/seed default stock items:", err);
+      },
+      (error) => {
+        console.error("Firestore loading error:", error);
+        // Fallback to DEFAULT_STOCKS in case of rules/network failure so the app doesn't break
+        if (isMounted) {
+          setStocks(DEFAULT_STOCKS);
+        }
       }
-    };
-
-    checkAndSeed();
-
-    const unsubscribe = onSnapshot(collection(db, "stocks"), (snapshot) => {
-      if (!isMounted) return;
-      if (!snapshot.empty) {
-        const list: StockItem[] = [];
-        snapshot.forEach((docSnap) => {
-          list.push(docSnap.data() as StockItem);
-        });
-        // Sort stock items by ID so they stay structured beautifully
-        list.sort((a, b) => a.id.localeCompare(b.id));
-        setStocks(list);
-      } else {
-        setStocks([]);
-      }
-    }, (error) => {
-      console.error("Firestore loading error:", error);
-    });
+    );
 
     const sessionAdmin = sessionStorage.getItem("suwon_admin_auth");
     if (sessionAdmin === "true") {
@@ -198,14 +216,23 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
   }, []);
 
   const getStockTranslation = (item: StockItem) => {
+    if (!item) {
+      return { name: "", condition: "", price: "", desc: "" };
+    }
+    const id = item.id || "";
+    const nameVal = item.name || "";
+    const conditionVal = item.condition || "";
+    const priceVal = item.approxPrice || "";
+    const descVal = item.desc || "";
+
     // Find if there is a default template matching this ID
-    const defaultItem = DEFAULT_STOCKS.find(d => d.id === item.id);
+    const defaultItem = DEFAULT_STOCKS.find((d) => d.id === id);
     
     // Check if the administrator customized the values
-    const isNameCustomized = defaultItem ? (item.name !== defaultItem.name) : true;
-    const isConditionCustomized = defaultItem ? (item.condition !== defaultItem.condition) : true;
-    const isPriceCustomized = defaultItem ? (item.approxPrice !== defaultItem.approxPrice) : true;
-    const isDescCustomized = defaultItem ? (item.desc !== defaultItem.desc) : true;
+    const isNameCustomized = defaultItem ? (nameVal !== defaultItem.name) : true;
+    const isConditionCustomized = defaultItem ? (conditionVal !== defaultItem.condition) : true;
+    const isPriceCustomized = defaultItem ? (priceVal !== defaultItem.approxPrice) : true;
+    const isDescCustomized = defaultItem ? (descVal !== defaultItem.desc) : true;
 
     if (language === "ko") {
       return {
@@ -645,16 +672,16 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
   const handleCreateStock = async (e: React.FormEvent) => {
     e.preventDefault();
     const newStock: StockItem = {
-      id: formId,
-      name: formName,
-      innerDia: formInnerDia,
-      thickness: formThickness,
-      length: formLength,
-      quantity: formQuantity,
-      condition: formCondition,
-      approxPrice: formApproxPrice,
-      imageUrl: formImageUrl,
-      imageUrls: formImageUrls,
+      id: formId || `STK-${Date.now()}`,
+      name: formName || "",
+      innerDia: formInnerDia || "",
+      thickness: formThickness || "",
+      length: formLength || "",
+      quantity: formQuantity || "",
+      condition: formCondition || "최우수",
+      approxPrice: formApproxPrice || "상담 협의",
+      imageUrl: formImageUrl || "https://images.unsplash.com/photo-1589793907316-f9d994350c3e?auto=format&fit=crop&q=80&w=650",
+      imageUrls: formImageUrls || [],
       desc: formDesc || `${formName} 제품에 대한 상세한 현물 대응 긴급 수권 지관 정보입니다.`
     };
     try {
@@ -699,17 +726,17 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
   const handleUpdateStock = async (e: React.FormEvent) => {
     e.preventDefault();
     const editedStock: StockItem = {
-      id: formId,
-      name: formName,
-      innerDia: formInnerDia,
-      thickness: formThickness,
-      length: formLength,
-      quantity: formQuantity,
-      condition: formCondition,
-      approxPrice: formApproxPrice,
-      imageUrl: formImageUrl,
-      imageUrls: formImageUrls,
-      desc: formDesc
+      id: formId || "",
+      name: formName || "",
+      innerDia: formInnerDia || "",
+      thickness: formThickness || "",
+      length: formLength || "",
+      quantity: formQuantity || "",
+      condition: formCondition || "최우수",
+      approxPrice: formApproxPrice || "상담 협의",
+      imageUrl: formImageUrl || "https://images.unsplash.com/photo-1589793907316-f9d994350c3e?auto=format&fit=crop&q=80&w=650",
+      imageUrls: formImageUrls || [],
+      desc: formDesc || ""
     };
     try {
       await setDoc(doc(db, "stocks", formId), editedStock);
@@ -782,13 +809,14 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
   };
 
   const filteredStocks = stocks.filter(s => {
+    if (!s) return false;
     const term = searchTerm.toLowerCase();
     const ltr = getStockTranslation(s);
     return (
-      ltr.name.toLowerCase().includes(term) ||
-      s.id.toLowerCase().includes(term) ||
-      s.innerDia.toLowerCase().includes(term) ||
-      ltr.condition.toLowerCase().includes(term)
+      (ltr.name || "").toLowerCase().includes(term) ||
+      (s.id || "").toLowerCase().includes(term) ||
+      (s.innerDia || "").toLowerCase().includes(term) ||
+      (ltr.condition || "").toLowerCase().includes(term)
     );
   });
 
