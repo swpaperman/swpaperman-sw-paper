@@ -1,0 +1,67 @@
+{
+  "entities": {
+    "StockItem": {
+      "title": "StockItem",
+      "description": "Stock inventory items available for inquiry and sales",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique product code or slug"
+        },
+        "name": {
+          "type": "string",
+          "description": "Product name"
+        },
+        "innerDia": {
+          "type": "string",
+          "description": "Inner diameter metric specification"
+        },
+        "thickness": {
+          "type": "string",
+          "description": "Wall thickness metric specification"
+        },
+        "length": {
+          "type": "string",
+          "description": "Length metric specification"
+        },
+        "quantity": {
+          "type": "string",
+          "description": "Available stock quantity"
+        },
+        "condition": {
+          "type": "string",
+          "description": "Product quality condition"
+        },
+        "approxPrice": {
+          "type": "string",
+          "description": "Approximate pricing quote"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Primary display photo URL"
+        },
+        "imageUrls": {
+          "type": "array",
+          "description": "Additional descriptive gallery photo URLs"
+        },
+        "desc": {
+          "type": "string",
+          "description": "Full technical description text paragraph"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["id", "name", "innerDia", "thickness", "length", "quantity", "condition", "approxPrice", "imageUrl"]
+    }
+  },
+  "firestore": {
+    "/stocks/{stockId}": {
+      "schema": "StockItem",
+      "description": "Global custom stock items collection synced in real-time"
+    }
+  }
+}

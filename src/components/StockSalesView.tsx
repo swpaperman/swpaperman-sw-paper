@@ -33,7 +33,8 @@ import {
   CheckSquare
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
-import { getAccessToken, googleSignIn, uploadStockImageToDrive } from "../lib/googleWorkspace";
+import { getAccessToken, googleSignIn, uploadStockImageToDrive, db } from "../lib/googleWorkspace";
+import { collection, onSnapshot, doc, setDoc, deleteDoc, getDocs } from "firebase/firestore";
 
 interface StockSalesViewProps {
   onTabChange: (tabId: string) => void;
@@ -150,28 +151,36 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
 
   // Storage and Initialization
   useEffect(() => {
-    const raw = localStorage.getItem("suwon_stocks_v2");
-    if (raw) {
-      try {
-        setStocks(JSON.parse(raw));
-      } catch (e) {
-        setStocks(DEFAULT_STOCKS);
+    const unsubscribe = onSnapshot(collection(db, "stocks"), async (snapshot) => {
+      if (snapshot.empty) {
+        // Seed database if empty
+        for (const defaultItem of DEFAULT_STOCKS) {
+          try {
+            await setDoc(doc(db, "stocks", defaultItem.id), defaultItem);
+          } catch (err) {
+            console.error("Error seeding stock:", err);
+          }
+        }
+      } else {
+        const list: StockItem[] = [];
+        snapshot.forEach((docSnap) => {
+          list.push(docSnap.data() as StockItem);
+        });
+        // Sort stock items by ID so they stay structured beautifully
+        list.sort((a, b) => a.id.localeCompare(b.id));
+        setStocks(list);
       }
-    } else {
-      setStocks(DEFAULT_STOCKS);
-      localStorage.setItem("suwon_stocks_v2", JSON.stringify(DEFAULT_STOCKS));
-    }
+    }, (error) => {
+      console.error("Firestore loading error:", error);
+    });
 
     const sessionAdmin = sessionStorage.getItem("suwon_admin_auth");
     if (sessionAdmin === "true") {
       setIsAdmin(true);
     }
-  }, []);
 
-  const saveStocksToDB = (list: StockItem[]) => {
-    setStocks(list);
-    localStorage.setItem("suwon_stocks_v2", JSON.stringify(list));
-  };
+    return () => unsubscribe();
+  }, []);
 
   const getStockTranslation = (item: StockItem) => {
     // Find if there is a default template matching this ID
@@ -618,7 +627,7 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
     setShowEditModal(true);
   };
 
-  const handleCreateStock = (e: React.FormEvent) => {
+  const handleCreateStock = async (e: React.FormEvent) => {
     e.preventDefault();
     const newStock: StockItem = {
       id: formId,
@@ -633,10 +642,14 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
       imageUrls: formImageUrls,
       desc: formDesc || `${formName} 제품에 대한 상세한 현물 대응 긴급 수권 지관 정보입니다.`
     };
-    const updated = [newStock, ...stocks];
-    saveStocksToDB(updated);
-    setShowAddModal(false);
-    alert(language === "ko" ? "자재가 정상 등록되었습니다." : "Product successfully categorized.");
+    try {
+      await setDoc(doc(db, "stocks", newStock.id), newStock);
+      setShowAddModal(false);
+      alert(language === "ko" ? "자재가 정상 등록되었습니다." : "Product successfully categorized.");
+    } catch (err) {
+      console.error("Error creating stock:", err);
+      alert(language === "ko" ? "자재 등록에 실패했습니다." : "Failed to register product.");
+    }
   };
 
   const handleDeleteStock = (id: string) => {
@@ -649,11 +662,14 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
       confirmText: language === "ko" ? "영구 삭제 실행" : "Delete Permanently",
       cancelText: language === "ko" ? "취소" : "Cancel",
       type: "danger",
-      onConfirm: () => {
-        const updated = stocks.filter((s) => s.id !== id);
-        saveStocksToDB(updated);
-        if (selectedStock && selectedStock.id === id) {
-          setSelectedStock(null);
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, "stocks", id));
+          if (selectedStock && selectedStock.id === id) {
+            setSelectedStock(null);
+          }
+        } catch (err) {
+          console.error("Error deleting stock:", err);
         }
       }
     });
@@ -665,11 +681,9 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
     onTabChange("contact");
   };
 
-  const handleUpdateStock = (e: React.FormEvent) => {
+  const handleUpdateStock = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingIndex === null) return;
-    const updated = [...stocks];
-    updated[editingIndex] = {
+    const editedStock: StockItem = {
       id: formId,
       name: formName,
       innerDia: formInnerDia,
@@ -682,9 +696,14 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
       imageUrls: formImageUrls,
       desc: formDesc
     };
-    saveStocksToDB(updated);
-    setShowEditModal(false);
-    setEditingIndex(null);
+    try {
+      await setDoc(doc(db, "stocks", formId), editedStock);
+      setShowEditModal(false);
+      setEditingIndex(null);
+    } catch (err) {
+      console.error("Error updating stock:", err);
+      alert(language === "ko" ? "수정에 실패했습니다." : "Failed to update product.");
+    }
   };
 
   const handleToggleSelectStock = (id: string) => {
@@ -704,13 +723,18 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
       confirmText: language === "ko" ? "일괄 삭제 실행" : "Confirm Batch Wipe",
       cancelText: language === "ko" ? "취소" : "Cancel",
       type: "danger",
-      onConfirm: () => {
-        const updated = stocks.filter((item) => !selectedStockIds.includes(item.id));
-        saveStocksToDB(updated);
-        if (selectedStock && selectedStockIds.includes(selectedStock.id)) {
-          setSelectedStock(null);
+      onConfirm: async () => {
+        try {
+          for (const idToDel of selectedStockIds) {
+            await deleteDoc(doc(db, "stocks", idToDel));
+          }
+          if (selectedStock && selectedStockIds.includes(selectedStock.id)) {
+            setSelectedStock(null);
+          }
+          setSelectedStockIds([]);
+        } catch (err) {
+          console.error("Error during batch delete:", err);
         }
-        setSelectedStockIds([]);
       }
     });
   };
@@ -725,9 +749,19 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
       confirmText: language === "ko" ? "초기화 진행" : "Restore Presets Now",
       cancelText: language === "ko" ? "취소" : "Cancel",
       type: "warning",
-      onConfirm: () => {
-        saveStocksToDB(DEFAULT_STOCKS);
-        setSelectedStockIds([]);
+      onConfirm: async () => {
+        try {
+          const querySnapshot = await getDocs(collection(db, "stocks"));
+          for (const docSnap of querySnapshot.docs) {
+            await deleteDoc(doc(db, "stocks", docSnap.id));
+          }
+          for (const defaultItem of DEFAULT_STOCKS) {
+            await setDoc(doc(db, "stocks", defaultItem.id), defaultItem);
+          }
+          setSelectedStockIds([]);
+        } catch (err) {
+          console.error("Error resetting to default preset list:", err);
+        }
       }
     });
   };
