@@ -6,7 +6,16 @@
 import React from "react";
 import { 
   Calculator, 
-  EyeOff
+  EyeOff,
+  Search,
+  Award,
+  ShieldCheck,
+  Activity,
+  Calendar,
+  Filter,
+  CheckCircle2,
+  Bookmark,
+  Info
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
 
@@ -18,6 +27,8 @@ interface AmmunitionViewProps {
 
 export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader = false }: AmmunitionViewProps) {
   const { language, t } = useLanguage();
+  const [selectedEra, setSelectedEra] = React.useState<string>("all");
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
 
   const productHistory = [
     { 
@@ -301,6 +312,89 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     }
   ];
 
+  const getEra = (devYear: string) => {
+    if (devYear === "-") return "era-10-now";
+    const yearMatch = devYear.match(/^(\d{4})/);
+    if (!yearMatch) return "all";
+    const year = parseInt(yearMatch[1], 10);
+    if (year < 1990) return "era-70-80";
+    if (year >= 1990 && year < 2010) return "era-90-00";
+    if (year >= 2010) return "era-10-now";
+    return "all";
+  };
+
+  const getSubBadge = (devYear: string, name: string) => {
+    // Special mapping requested for KDS8140 item: "신규 국방규격 최초생산품 합격"
+    if (name.includes("KDS8140") || name.includes("KDS8140-4005")) {
+      return {
+        text: language === "ko" ? "신규 국방규격 최초생산품 합격" : language === "tr" ? "Yeni Askeri Şartname Onaylı İlk Ürün" : "First-Article Approved (New Spec)",
+        classes: "bg-emerald-50 text-emerald-850 border border-emerald-250 font-bold"
+      };
+    }
+
+    // Special mapping requested for KM18 "기타" item: "소구경 신규 국방규격 최초생산품 합격"
+    if (name.includes("KM18") || name.includes("연막수류탄") || name.includes("Others (KM18")) {
+      return {
+        text: language === "ko" ? "소구경 신규 국방규격 최초생산품 합격" : language === "tr" ? "Küçük Çaplı Yeni Askeri Şartname Onaylı" : "First-Article Approved (Small Caliber)",
+        classes: "bg-teal-50 text-teal-850 border border-teal-250 font-bold"
+      };
+    }
+
+    const isEco = name.includes("친환경") || name.includes("플라스틱") || name.includes("Eco") || name.includes("Doğa");
+    if (isEco) {
+      return {
+        text: language === "ko" ? "친환경 독자기술" : language === "tr" ? "Biyo-uyumlu Doğa Dostu" : "Proprietary Eco Tech",
+        classes: "bg-emerald-50 text-emerald-800 border border-emerald-200"
+      };
+    }
+    const isTactical = name.includes("유도로켓") || name.includes("대어뢰용") || name.includes("KMK25") || name.includes("Savaş Başlığı") || name.includes("Torpido") || name.includes("Tactical") || name.includes("Guided");
+    if (isTactical) {
+      return {
+        text: language === "ko" ? "정밀 전략무기" : language === "tr" ? "Taktik Muharebe" : "Tactical Grade",
+        classes: "bg-amber-50 text-amber-800 border border-amber-200"
+      };
+    }
+    const yearMatch = devYear.match(/^(\d{4})/);
+    if (!yearMatch) {
+      return {
+        text: language === "ko" ? "국방 규격 승인" : language === "tr" ? "Askeri Şartname" : "Standard Mil-Spec",
+        classes: "bg-gray-100 text-gray-700 border border-gray-200"
+      };
+    }
+    const year = parseInt(yearMatch[1], 10);
+    if (year < 1980) {
+      return {
+        text: language === "ko" ? "1세대 자주국방 모델" : language === "tr" ? "Gen-1 Yerlileştirme" : "Gen-1 Localization",
+        classes: "bg-blue-50 text-blue-800 border border-blue-200"
+      };
+    } else if (year < 1990) {
+      return {
+        text: language === "ko" ? "국방규격 KDS" : language === "tr" ? "KDS Askeri Şartname" : "KDS Military Standard",
+        classes: "bg-indigo-50 text-indigo-800 border border-indigo-200"
+      };
+    } else {
+      return {
+        text: language === "ko" ? "국방규격 KDS" : language === "tr" ? "KDS Askeri Şartname" : "KDS Spec Certified",
+        classes: "bg-purple-50 text-purple-800 border border-purple-200"
+      };
+    }
+  };
+
+  const filteredHistory = productHistory.filter((item) => {
+    if (selectedEra !== "all") {
+      const era = getEra(item.devYear);
+      if (era !== selectedEra) return false;
+    }
+    if (searchQuery.trim() !== "") {
+      const query = searchQuery.toLowerCase().trim();
+      const nameMatch = item.name.toLowerCase().includes(query);
+      const devMatch = item.devYear.toLowerCase().includes(query);
+      const prodMatch = item.prodYear.toLowerCase().includes(query);
+      return nameMatch || devMatch || prodMatch;
+    }
+    return true;
+  });
+
   const performances = [
     { 
       title: language === "ko" ? "방습성 (Moisture Block)" : language === "tr" ? "Nem Direnci (Moisture Block)" : "Humidity Shielding", 
@@ -365,10 +459,10 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
         {!hideHeader && (
           <div className="text-left mb-12">
             <span className="text-xs font-mono font-bold text-military-700 tracking-widest uppercase bg-military-50 px-3 py-1 rounded inline-block">
-              {t.home.ammunitionBadge}
+              {t.ammo.badge}
             </span>
             <h1 className="mt-3 text-3xl sm:text-4.5xl font-black text-gray-900 tracking-tight leading-tight">
-              {t.home.ammunitionTitle}
+              {t.ammo.title}
             </h1>
             <div className="w-12 h-1 bg-kraft-500 mt-4 rounded-full" />
           </div>
@@ -400,7 +494,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
         <div className="max-w-5xl mx-auto space-y-8 text-left leading-relaxed mb-16">
           <div className="border-b border-gray-150 pb-6 mb-6">
             <p className="text-gray-800 text-base sm:text-lg md:text-xl font-normal leading-relaxed">
-              <strong>{t.home.ammunitionTitle}</strong>은 {t.home.ammunitionDesc}
+              {t.ammo.descBold}
             </p>
           </div>
 
@@ -453,49 +547,235 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
           </div>
         </div>
 
-        {/* Applicable fields (적용 가능 분야) */}
-        <div className="mb-16 text-left">
-          <div className="border-l-4 border-military-700 pl-3 mb-3">
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+        {/* Applicable fields (적용 가능 분야 - 국방 규격 탄약지환통 통합 대장) */}
+        <div className="mb-20 text-left">
+          <div className="border-l-4 border-military-700 pl-4 mb-4">
+            <span className="text-[10px] sm:text-xs font-mono font-black text-military-700 tracking-widest uppercase block mb-1">
+              NATIONAL DEFENSE CAPABILITY LOG
+            </span>
+            <h3 className="text-xl sm:text-2.5xl font-black text-gray-950 tracking-tight leading-tight">
               {language === "ko" ? "탄약지환통 개발 및 생산 연혁" : language === "tr" ? "Mühimmat Kutusu Üretim Portföyümüz" : "Ammunition Sleeve Production Milestone Logistics"}
             </h3>
-            <p className="text-[11px] sm:text-xs text-gray-500 font-light mt-0.5">
+            <p className="text-xs sm:text-[13px] text-gray-500 mt-1 max-w-4xl leading-relaxed">
               {language === "ko"
-                ? "국방과학연구소(ADD), 국방기술품질원(DTaQ), 한화, 풍산 등과 공동 개발 및 생산을 이어온 고품질 탄약지환통 제품군입니다."
+                ? "주식회사 수원지관산업은 1973년 이래 국방과학연구소(ADD), 국방기술품질원(DTaQ), 풍산, 한화 등 국가 방산 협력업체의 핵심 벤더로서 탄약 보존을 위한 방습 수밀 지질 규격을 공동 제안하여 국산화 생산을 선도해왔습니다."
                 : language === "tr"
                   ? "Savunma Teknolojileri Ajansı (ADD), Kore Kalite Enstitüsü (DTaQ), Hanwha Aerospace ve Poongsan ile ortaklaşa geliştirip ürettiğimiz askeri ambalaj parçalarıdır."
                   : "High-integrity bullet protective pack tubes co-developed and supplied alongside ADD, DTaQ, Hanwha, Poongsan, and aerospace projects."}
             </p>
           </div>
-          
-          <div className="overflow-hidden rounded-2xl border border-gray-150 shadow-xs bg-white mt-6">
+
+          {/* Heavy Military Capability Metrics Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div className="bg-gradient-to-br from-military-900 to-black p-5 rounded-2xl border border-military-800 text-white relative overflow-hidden shadow-md">
+              <div className="absolute right-3 top-3 opacity-15">
+                <Award className="w-16 h-16 text-kraft-350" />
+              </div>
+              <span className="text-[10px] font-mono tracking-widest text-military-300 uppercase font-bold block">SINCE 1973 MILITARY CONTRACT</span>
+              <span className="text-2.5xl font-black text-kraft-100 tracking-tight block mt-1">50+ Years</span>
+              <p className="text-[12px] text-military-150 mt-2 font-medium leading-relaxed text-gray-200/95">
+                {language === "ko" 
+                  ? "반세기 동안 축적해 온 독보적인 고강도 방습 나선 지관 제조 원제 제어 기조" 
+                  : "Over 50 years of robust military packaging R&D and serial manufacturing excellence."}
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-gray-950 to-black p-5 rounded-2xl border border-gray-800 text-white relative overflow-hidden shadow-md">
+              <div className="absolute right-3 top-3 opacity-15">
+                <ShieldCheck className="w-16 h-16 text-military-300" />
+              </div>
+              <span className="text-[10px] font-mono tracking-widest text-gray-400 uppercase font-bold block">SPECIFICATION AUDIT</span>
+              <span className="text-2.5xl font-black text-military-205 tracking-tight block mt-1 text-gray-100">KDS Standard Approved</span>
+              <p className="text-[12px] text-gray-300 mt-2 font-medium leading-relaxed">
+                {language === "ko" 
+                  ? "KDS 8140-4005 국방규격, US MIL-SPEC 및 NATO 완벽 대응 성능" 
+                  : "100% compliant with strict Korean KDS and US military standards."}
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-[#26170a] to-[#0a0502] p-5 rounded-2xl border border-kraft-800 text-white relative overflow-hidden shadow-md">
+              <div className="absolute right-3 top-3 opacity-20">
+                <Activity className="w-16 h-16 text-kraft-300" />
+              </div>
+              <span className="text-[10px] font-mono tracking-widest text-kraft-200 uppercase font-bold block">ACTIVE SUPPLY REPUTATION</span>
+              <span className="text-2.5xl font-black text-white tracking-tight block mt-1">Zero Defect Mass Production</span>
+              <p className="text-[12px] text-kraft-100/95 mt-2 font-medium leading-relaxed">
+                {language === "ko" 
+                  ? "체계업체(한화, 풍산 등)와 군수 야전 저장 30년 이상 품질 무결점 안전 입증" 
+                  : "Trusted partners of Hanwha Aerospace, Poongsan, and military forces with flawless logs."}
+              </p>
+            </div>
+          </div>
+
+          {/* Interactive Filtering and Searching Cockpit */}
+          <div className="bg-gray-50/80 p-4 rounded-2xl border border-gray-150 mb-6 space-y-4">
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+              
+              {/* Category-Era Tabs */}
+              <div className="flex flex-wrap gap-1.5 w-full md:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setSelectedEra("all")}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    selectedEra === "all"
+                      ? "bg-military-850 text-white border-military-850 shadow-sm"
+                      : "bg-white hover:bg-gray-100 text-gray-600 border-gray-200"
+                  }`}
+                >
+                  {language === "ko" ? "전체 이력" : language === "tr" ? "Tüm Tarihçe" : "Full History"} ({productHistory.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedEra("era-70-80")}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    selectedEra === "era-70-80"
+                      ? "bg-military-850 text-white border-military-850 shadow-sm"
+                      : "bg-white hover:bg-gray-100 text-gray-600 border-gray-200"
+                  }`}
+                >
+                  {language === "ko" ? "자주국방 초석기 (1970~80s)" : language === "tr" ? "Yerlileştirme (1970~80s)" : "Foundation Era (1970~80s)"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedEra("era-90-00")}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    selectedEra === "era-90-00"
+                      ? "bg-military-850 text-white border-military-850 shadow-sm"
+                      : "bg-white hover:bg-gray-100 text-gray-600 border-gray-200"
+                  }`}
+                >
+                  {language === "ko" ? "경쟁력 고도화기 (1990~00s)" : language === "tr" ? "Modernizasyon (1990~00s)" : "Precision Era (1990~00s)"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedEra("era-10-now")}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    selectedEra === "era-10-now"
+                      ? "bg-military-850 text-white border-military-850 shadow-sm"
+                      : "bg-white hover:bg-gray-100 text-gray-600 border-gray-200"
+                  }`}
+                >
+                  {language === "ko" ? "현대 & 친환경 스마트기 (2010s~)" : language === "tr" ? "Sürdürülebilir Dönem (2010s~)" : "Strategic & Eco-Tech (2010s~)"}
+                </button>
+              </div>
+
+              {/* Dynamic Live Search Input */}
+              <div className="relative w-full md:w-80">
+                <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder={language === "ko" ? "규격 또는 탄종 검색 (예: KM, 수류탄, 105MM)..." : language === "tr" ? "Model / Şartname Ara..." : "Search specs / calibers..."}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-white rounded-xl text-xs border border-gray-200 focus:outline-none focus:border-military-800 focus:ring-1 focus:ring-military-800 shadow-xs text-gray-800"
+                />
+              </div>
+
+            </div>
+          </div>
+
+          {/* Ledger Table Section */}
+          <div className="overflow-hidden rounded-2xl border border-gray-150 shadow-sm bg-white">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs sm:text-sm">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-150 text-gray-700 font-bold uppercase tracking-wider">
-                    <th className="py-3 px-4 sm:px-6">{language === "ko" ? "품 명" : language === "tr" ? "Ürün Adı" : "Product Designation"}</th>
-                    <th className="py-3 px-4 text-center md:text-left w-24 sm:w-32">{language === "ko" ? "개 발 년 도" : language === "tr" ? "Tasarım Yılı" : "R&D Year"}</th>
-                    <th className="py-3 px-4 text-center md:text-left w-28 sm:w-36">{language === "ko" ? "생 산 년 도" : language === "tr" ? "İmalat Yılı" : "Active Production"}</th>
+                  <tr className="bg-gray-100/80 border-b border-gray-150 text-gray-700 font-bold uppercase tracking-wider">
+                    <th className="py-3 px-4 sm:px-6 w-1/2">{language === "ko" ? "국방 규격 / 납품 모델명" : language === "tr" ? "Ürün Adı ve Şartname" : "Product Designation & Spec Name"}</th>
+                    <th className="py-3 px-4 w-1/4 sm:w-1/5">{language === "ko" ? "분 류 테 그" : "Classification"}</th>
+                    <th className="py-3 px-4 text-center w-24 sm:w-28">{language === "ko" ? "개 발 년 도" : language === "tr" ? "Tasarım Yılı" : "R&D Year"}</th>
+                    <th className="py-3 px-4 text-center sm:text-left w-28 sm:w-36">{language === "ko" ? "생 산 및 양 산" : language === "tr" ? "İmalat Durumu" : "Active Production"}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-gray-650 font-normal leading-relaxed">
-                  {productHistory.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="py-2.5 px-4 sm:px-6 font-semibold text-gray-850">{item.name}</td>
-                      <td className="py-2.5 px-4 text-center md:text-left font-mono text-gray-500">{item.devYear}</td>
-                      <td className="py-2.5 px-4 text-center md:text-left font-mono">
-                        {item.prodYear.includes("현재") || item.prodYear.includes("Aktif") || item.prodYear.includes("Present") ? (
-                          <span className="inline-block bg-military-50 text-military-850 px-2 py-0.5 rounded text-[10px] font-bold">
-                            {item.prodYear}
-                          </span>
-                        ) : (
-                          <span className="text-gray-500">{item.prodYear}</span>
-                        )}
+                  {filteredHistory.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-16 text-center text-gray-400 font-normal">
+                        <Info className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                        <span className="block text-xs font-semibold text-gray-500">
+                          {language === "ko" ? "일치하는 군수 규격 이력이 검색되지 않았습니다." : "No spec histories found matching your query."}
+                        </span>
+                        <span className="block text-[10px] text-gray-400 mt-1">
+                          {language === "ko" ? "철자나 검색어를 확인하시거나 다른 탭을 활용해 보세요." : "Check details or select 'Full History'."}
+                        </span>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredHistory.map((item, idx) => {
+                      const badgeInfo = getSubBadge(item.devYear, item.name);
+                      const isActive = item.prodYear.includes("현재") || item.prodYear.includes("Aktif") || item.prodYear.includes("Present");
+                      
+                      const isPre2008 = (() => {
+                        const devYearStr = item.devYear;
+                        if (devYearStr && devYearStr !== "-") {
+                          const match = devYearStr.match(/^(\d{4})/);
+                          if (match) {
+                            return parseInt(match[1], 10) < 2008;
+                          }
+                        }
+                        const prodYearStr = item.prodYear;
+                        if (prodYearStr) {
+                          const match = prodYearStr.match(/^(\d{4})/);
+                          if (match) {
+                            return parseInt(match[1], 10) < 2008;
+                          }
+                        }
+                        return false;
+                      })();
+                      
+                      return (
+                        <tr key={idx} className="hover:bg-gray-50/80 transition-colors">
+                          {/* Product / Spec Name */}
+                          <td className="py-3 px-4 sm:px-6 font-bold text-gray-850">
+                            <div className="flex items-center gap-2">
+                              <Bookmark className="w-3.5 h-3.5 text-military-500 shrink-0" />
+                              <span className="tracking-tight">{item.name}</span>
+                            </div>
+                          </td>
+
+                          {/* Dynamic Technical Classification Tag */}
+                          <td className="py-3 px-4">
+                            <span className={`inline-block text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-tight ${badgeInfo.classes}`}>
+                              {badgeInfo.text}
+                            </span>
+                          </td>
+
+                          {/* Development Year */}
+                          <td className="py-3 px-4 text-center font-mono text-gray-500 text-xs font-medium">
+                            {item.devYear}
+                          </td>
+
+                          {/* Active Production Status */}
+                          <td className="py-3 px-4 text-center sm:text-left">
+                            {isActive ? (
+                              isPre2008 ? (
+                                <span className="inline-flex items-center gap-1.5 bg-military-50 text-military-850 border border-military-200 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-tight">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-military-600 block" />
+                                  {language === "ko" ? "방산 전략물자" : language === "tr" ? "Stratejik Savunma Malzemesi" : "Strategic Defense Materiel"}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 border border-emerald-100 px-2.5 py-1 rounded-lg text-[10px] font-black tracking-tight animate-pulse">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 block" />
+                                  {language === "ko" ? "실시간 양산 공급 중" : item.prodYear}
+                                </span>
+                              )
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-gray-500 bg-gray-50 border border-gray-150 px-2.5 py-0.5 rounded-lg text-[11px] font-medium font-mono">
+                                <Calendar className="w-3 h-3 text-gray-450 shrink-0" />
+                                {item.prodYear}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
+            </div>
+            {/* Total Results Micro Counter */}
+            <div className="bg-gray-50 px-4 py-2.5 border-t border-gray-150 flex items-center justify-between text-[11px] text-gray-500 font-mono">
+              <span>LEDGER COMPILATION: ACTIVE REGISTRY</span>
+              <span>{filteredHistory.length} / {productHistory.length} {language === "ko" ? "개 규격 노출 중" : "Items Filtered"}</span>
             </div>
           </div>
         </div>

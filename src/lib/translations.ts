@@ -389,7 +389,7 @@ export const translations: Record<"ko" | "en" | "tr", TranslationSchema> = {
       qualityVal: "국방규격 기반 공정 품질관리",
       customQuantityConsult: "군수 포장용 맞춤형 수량 상담",
       sizesCustomisable: "규격조율가능",
-      partnersHeader: "핵심 수요군 및 체계종합업체",
+      partnersHeader: "핵심 수요군 및 체계(완성탄)업체",
       ammoTitle: "탄약지환통(국가전략 탄 보호용)",
       ammoDesc: "탄약지환통은 탄약의 보관, 수송, 취급 과정에서 외부의 습기나 물리적 외력으로부터 정밀 화약류 및 동체를 안전하게 보호하는 전비용 기능성 포장재입니다. 수원지관산업은 미국 국방 MIL 규격 및 NATO 기준의 모든 탄종을 수용하며, 사막과 아열대 기후 등 전 세계 극한 조건을 극복합니다. 실제 30년 이상 노후화된 탄약고 환경에서도 단 하나의 결함도 없는 최상의 성능을 증증해 왔습니다.",
       ammoPerf1Title: "방수·방습막 & MIL·NATO 규격",

@@ -16,10 +16,113 @@ import {
   Sliders, 
   X,
   PlusCircle,
-  HelpCircle
+  HelpCircle,
+  RefreshCw,
+  Cpu,
+  Layers,
+  Radio
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useLanguage } from "../context/LanguageContext";
+
+const defensePartners = [
+  {
+    name: "한화에어로스페이스",
+    nameTr: "Hanwha Aerospace",
+    nameEn: "Hanwha Aerospace",
+    badge: "K-방산 화포/탄약 체계 체계업체",
+    link: "https://www.hanwhaaerospace.co.kr/",
+    logo: "https://lh3.googleusercontent.com/d/1q04UKpLEFNpXhY5L49l5usZC7kzHaZX5"
+  },
+  {
+    name: "풍산",
+    nameTr: "Poongsan",
+    nameEn: "Poongsan Corp",
+    badge: "한국군 탄약 및 포병탄 주도공급",
+    link: "https://www.poongsan.co.kr/",
+    logo: "https://lh3.googleusercontent.com/d/1IBcG1Fg2fmYoP1rqV9pa6HPigwSAw4vo"
+  },
+  {
+    name: "삼양화학공업",
+    nameTr: "Samyang Chemical",
+    nameEn: "Samyang Chemical",
+    badge: "K-방산 특수 화학/연막탄 제조",
+    link: "http://www.samyangchem.co.kr/",
+    logo: "https://lh3.googleusercontent.com/d/1LiuhnDf3UFNy3gik9GlhOxUWAn1ybVhj"
+  },
+  {
+    name: "LIG넥스원",
+    nameTr: "LIG Nex1",
+    nameEn: "LIG Nex1",
+    badge: "해군/공군 정밀 항공유도무기 선도",
+    link: "https://www.lignex1.com/",
+    logo: "https://lh3.googleusercontent.com/d/1-4Y0wX-5omGAIOH_Ih5pfVtGLIwdOxUm"
+  },
+  {
+    name: "대한민국 국방부",
+    nameTr: "MND Korea",
+    nameEn: "Ministry of Defense",
+    badge: "국방 정책 수립 & 국방규격 통제기관",
+    link: "https://www.mnd.go.kr/",
+    logo: "https://lh3.googleusercontent.com/d/1TMm1GB-kYqNNI3rTaKo6yLr7wd6NDKwL"
+  },
+  {
+    name: "방위사업청",
+    nameTr: "DAPA",
+    nameEn: "DAPA",
+    badge: "방위력개선 및 국방 군수 조달 총괄",
+    link: "https://www.dapa.go.kr/",
+    logo: "https://lh3.googleusercontent.com/d/1UT5mmcEtz_gh392ncjV3jYIWIEPeBh39"
+  },
+  {
+    name: "국방과학연구소",
+    nameTr: "ADD",
+    nameEn: "ADD Research",
+    badge: "대한민국 국방 과학 핵심 무기 R&D",
+    link: "https://www.add.re.kr/",
+    logo: "https://lh3.googleusercontent.com/d/1YeEFMNVO4g_Bs1gqDJGGTifgltIHrH8H"
+  },
+  {
+    name: "한국항공우주산업 (KAI)",
+    nameTr: "KAI Corp",
+    nameEn: "Korea Aerospace Industries",
+    badge: "KF-21 / FA-50 / 수리온 국산 항공기 우뚝",
+    link: "https://www.koreaaero.com/",
+    logoIcon: "✈️"
+  },
+  {
+    name: "한화시스템",
+    nameTr: "Hanwha Systems",
+    nameEn: "Hanwha Systems",
+    badge: "방산 ICT, 에이사(AESA) 레이더 및 전술통신",
+    link: "https://www.hanwhasystems.com/",
+    logoIcon: "📡"
+  },
+  {
+    name: "현대로뎀",
+    nameTr: "Hyundai Rotem",
+    nameEn: "Hyundai Rotem",
+    badge: "K2 흑표 전차 및 지상 기동장비 원조",
+    link: "https://www.hyundai-rotem.co.kr/",
+    logoIcon: "⚙️"
+  },
+  {
+    name: "빅텍",
+    nameTr: "Victek",
+    nameEn: "Victek Co.",
+    badge: "방산 전자전 시스템 & 피아식별 군인프라",
+    link: "https://www.victek.co.kr/",
+    logoIcon: "⚡"
+  },
+  {
+    name: "기아 군수차량",
+    nameTr: "Kia Military Veh.",
+    nameEn: "Kia Military Vehicles",
+    badge: "한국형 소형전술차(KLTV) & 군용 트럭 명가",
+    link: "https://military.kia.com",
+    logoIcon: "🚚"
+  }
+];
 
 interface NewsArticle {
   id: string;
@@ -192,12 +295,19 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
               return updated;
             })
           : [];
+
         // Ensure initial articles are represented if we updated default articles list
         const hasSwNews = cleaned.some((art: NewsArticle) => art.id === "news-sw-1");
-        if (!hasSwNews || cleaned.length < initialArticles.length) {
-          return initialArticles;
-        }
-        return cleaned;
+        const resolved = (!hasSwNews || cleaned.length < initialArticles.length) ? initialArticles : cleaned;
+
+        // Perform strict duplicate ID elimination before setting state
+        const seen = new Set();
+        return resolved.filter((art: NewsArticle) => {
+          if (!art.id) return false;
+          if (seen.has(art.id)) return false;
+          seen.add(art.id);
+          return true;
+        });
       } catch (err) {
         return initialArticles;
       }
@@ -209,6 +319,72 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
   useEffect(() => {
     localStorage.setItem("sw_defense_news", JSON.stringify(articles));
   }, [articles]);
+
+  // Live AI News States
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiSources, setAiSources] = useState<{ title: string; uri: string }[]>([]);
+
+  const fetchLiveAiNews = async () => {
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const response = await fetch("/api/defense-news/live", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      const data = await response.json();
+      if (data.success && data.articles && data.articles.length > 0) {
+        // Enforce uniqueness of IDs in the fetched articles to prevent duplicate key errors in React
+        const sanitizedArticles = data.articles.map((art: any, index: number) => {
+          // If Gemini returned articles with duplicate/non-unique/no IDs, we guarantee a unique ID
+          const cleanId = art.id ? (art.id.startsWith("news-ai-") ? art.id : `news-ai-${art.id}`) : `news-ai-${index}`;
+          // Add timestamp/index to avoid collisions
+          return {
+            ...art,
+            id: `${cleanId}-${index}-${Date.now()}`
+          };
+        });
+
+        setArticles(prev => {
+          const liveIds = new Set(sanitizedArticles.map((art: any) => art.id));
+          const filteredPrev = prev.filter(art => art.id && !liveIds.has(art.id));
+          const merged = [...sanitizedArticles, ...filteredPrev];
+          
+          // Deduplicate by ID just in case to be 100% robust
+          const seen = new Set();
+          return merged.filter(art => {
+            if (!art.id) return false;
+            if (seen.has(art.id)) return false;
+            seen.add(art.id);
+            return true;
+          });
+        });
+        
+        if (data.sources) {
+          setAiSources(data.sources);
+        }
+        showNotification("실시간 AI 기반 K-방산 최신 뉴스 분석이 완료되었습니다.");
+      } else {
+        setAiError(data.error || "실시간 AI 데이터를 수집할 수 없었습니다. API 서버 상태를 확인해주세요.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      setAiError("실시간 AI 서버 연결에 실패했습니다. AI Studio 비밀 키가 설정되어 있는지 확인해주세요.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // Automatically trigger AI fetch on mount if there's no live-analysis news yet
+  useEffect(() => {
+    const hasLiveArticles = articles.some(art => art.id?.startsWith("news-ai-"));
+    if (!hasLiveArticles) {
+      fetchLiveAiNews();
+    }
+  }, []);
 
   // Search & Filtering State
   const [searchQuery, setSearchQuery] = useState("");
@@ -425,8 +601,6 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
     setArticles([mockFeed[0], ...articles]);
     showNotification("RSS API & AI 요약봇 모듈 시뮬레이션: 1건 수신 성공!");
   };
-
-  // Filter logic
   const filteredArticles = articles.filter(art => {
     // 1. Tab filter
     if (activeTabFilter !== "all" && art.tab !== activeTabFilter) return false;
@@ -501,7 +675,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                 )}
                 {language === "tr" && (
                   <>
-                    Karton mühimmat muhafaza kutularında lider üretici olan Suwon Paper olarak, küresel askeri lojistik standartlarını ve mühimmat ambalaj 
+                    Karton mühimmat muhafaza kutularında lider üretici olan Suwon Paper olarak, küresel askeri lojistik standartlarını 및 mühimmat ambalaj 
                     pazarı değişimlerini sektörel analiz sayfamızda takipçilerimizle paylaşıyoruz.
                   </>
                 )}
@@ -584,7 +758,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
               )}
 
               {/* Developer RSS Simulator shortcut buttons */}
-              <div className="mt-1 border-t border-military-800 pt-2 flex flex-col gap-1.5">
+              <div className="mt-1 border-t border-military-800 pt-2 flex flex-col gap-1.5 font-sans">
                 <button 
                   onClick={simulateAPIImport}
                   className="w-full py-1 text-center bg-military-850 hover:bg-military-800 text-[10px] font-mono font-bold text-kraft-300 rounded border border-military-750/50 flex items-center justify-center gap-1 cursor-pointer"
@@ -601,6 +775,66 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* K-방산 전략 협력 네트워크 (K-Defense Strategic Network Slider) */}
+      <section className="bg-gray-950 text-white py-8 border-b border-gray-900 overflow-hidden relative">
+        <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[35vw] h-[100px] rounded-full bg-kraft-500/5 blur-[80px] pointer-events-none" />
+        <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[35vw] h-[100px] rounded-full bg-military-500/5 blur-[80px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-4">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-red-500/90 animate-pulse" />
+            <span className="text-[10px] font-mono tracking-[0.2em] text-kraft-350 font-bold uppercase">
+              K-Defense Strategic Partnership Network
+            </span>
+          </div>
+        </div>
+
+        <div className="relative w-full overflow-hidden py-3 bg-black/40 border-y border-gray-900/60 animate-marquee-paused animate-marquee-active">
+          <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-gray-950 to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-gray-950 to-transparent z-10 pointer-events-none" />
+
+          <div className="animate-marquee gap-4 flex shrink-0">
+            {[...defensePartners, ...defensePartners, ...defensePartners].map((partner, idx) => {
+              const displayName = language === "ko" ? partner.name : language === "tr" ? partner.nameTr : partner.nameEn;
+              return (
+                <a
+                  key={idx}
+                  href={partner.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-56 sm:w-64 bg-gradient-to-br from-military-900 via-gray-950 to-black hover:from-military-850 hover:to-military-950 border border-military-800/80 hover:border-kraft-500/80 rounded-xl p-3 flex flex-col justify-between transition-all duration-300 shadow-lg text-left select-none relative group cursor-pointer hover:-translate-y-0.5 shrink-0"
+                >
+                  <div className="flex items-center gap-2.5">
+                    {partner.logo ? (
+                      <div className="w-8 h-8 rounded-lg bg-white p-1 flex items-center justify-center shrink-0 border border-military-700/30 overflow-hidden font-sans">
+                        <img 
+                          src={partner.logo} 
+                          alt={partner.name}
+                          className="max-h-full max-w-full object-contain"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-military-850 flex items-center justify-center shrink-0 border border-military-700/40 text-sm shadow-inner font-sans">
+                        {partner.logoIcon}
+                      </div>
+                    )}
+                    <div className="overflow-hidden">
+                      <span className="block text-[11px] font-black text-white group-hover:text-kraft-350 transition-colors leading-tight truncate">
+                        {displayName}
+                      </span>
+                      <span className="block text-[9px] text-gray-400 mt-0.5 font-light truncate">
+                        {partner.badge}
+                      </span>
+                    </div>
+                  </div>
+                </a>
+              );
+            })}
           </div>
         </div>
       </section>
