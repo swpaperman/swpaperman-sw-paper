@@ -498,7 +498,7 @@ export const translations: Record<"ko" | "en" | "tr", TranslationSchema> = {
       sub: "수원지관산업이 보유한 국내 최다 규격의 금형 리스트를 확인하고 필요한 지관 외경, 예상 단위 중량 및 최적의 원재료 소요량을 실시간 모델링할 수 있습니다.",
       tabSelectMold: "수원 표준 금형 조회하기",
       tabDirectInput: "맞춤 규격 직접 입력",
-      listHeaderTitle: "보유 중인 108종 표준 몰드 리스트",
+      listHeaderTitle: "보유 중인 108종 이상의 금형 리스트",
       listHeaderSub: "공장 보유 금형을 적용하시면 금형 신규 제작 비용(최대 수백만원)을 차감하여 납기를 획기적으로 낮출 수 있습니다.",
       searchPlaceholder: "내경 규격 검색 (예: 76.3)...",
       catAll: "전체 보기",
