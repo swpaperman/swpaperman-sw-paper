@@ -413,18 +413,6 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
-  // Batch selection states
-  const [selectedStockIds, setSelectedStockIds] = useState<string[]>([]);
-  const [isManageMode, setIsManageMode] = useState(false);
-
-  // Sync manage mode and selectedStockIds with isAdmin status
-  useEffect(() => {
-    if (!isAdmin) {
-      setIsManageMode(false);
-      setSelectedStockIds([]);
-    }
-  }, [isAdmin]);
-
   // Custom Modal Confirmation state for robust cross-origin iframe security
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -748,39 +736,6 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
     }
   };
 
-  const handleToggleSelectStock = (id: string) => {
-    setSelectedStockIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
-  const handleBatchDelete = () => {
-    if (selectedStockIds.length === 0) return;
-    setConfirmModal({
-      isOpen: true,
-      title: language === "ko" ? "선택 제품 일괄 삭제" : "Batch Delete Product Items",
-      message: language === "ko"
-        ? `정말로 선택된 ${selectedStockIds.length}개의 제품 항목을 일괄 영구 삭제하시겠습니까?`
-        : `Do you want to permanently wipe out references of ${selectedStockIds.length} selected products?`,
-      confirmText: language === "ko" ? "일괄 삭제 실행" : "Confirm Batch Wipe",
-      cancelText: language === "ko" ? "취소" : "Cancel",
-      type: "danger",
-      onConfirm: async () => {
-        try {
-          for (const idToDel of selectedStockIds) {
-            await deleteDoc(doc(db, "stocks", idToDel));
-          }
-          if (selectedStock && selectedStockIds.includes(selectedStock.id)) {
-            setSelectedStock(null);
-          }
-          setSelectedStockIds([]);
-        } catch (err) {
-          console.error("Error during batch delete:", err);
-        }
-      }
-    });
-  };
-
   const resetToDefault = () => {
     setConfirmModal({
       isOpen: true,
@@ -800,7 +755,6 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
           for (const defaultItem of DEFAULT_STOCKS) {
             await setDoc(doc(db, "stocks", defaultItem.id), defaultItem);
           }
-          setSelectedStockIds([]);
         } catch (err) {
           console.error("Error resetting to default preset list:", err);
         }
@@ -1008,31 +962,6 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
 
           {/* Admin Control Switch */}
           <div className="flex flex-wrap items-center gap-3 shrink-0">
-            {isAdmin && (
-              <div className="flex items-center gap-2 bg-gray-50 border border-gray-250 rounded-full py-1.5 px-3.5 select-none shadow-3xs text-xs font-bold text-gray-700">
-                <span>🛠 {language === "ko" ? "자재 편집모드" : "Manage Mode"}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsManageMode(!isManageMode);
-                    setSelectedStockIds([]);
-                  }}
-                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    isManageMode ? "bg-amber-600" : "bg-gray-300"
-                  }`}
-                  role="switch"
-                  aria-checked={isManageMode}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                      isManageMode ? "translate-x-4" : "translate-x-0"
-                    }`}
-                  />
-                </button>
-              </div>
-            )}
-
             {isAdmin ? (
               <div className="flex items-center gap-2 bg-military-50 border border-military-200 rounded-full py-1.5 px-4 shadow-3xs text-xs font-bold">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -1183,85 +1112,17 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
 
         </div>
 
-        {/* Selected Area Title with Select-All options */}
+        {/* Selected Area Title with Sizing Info */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-sans text-left">
           <div className="flex flex-wrap items-center gap-3">
             <h3 className="text-lg sm:text-xl font-bold text-gray-900 border-l-4 border-military-700 pl-3">
               {language === "ko" ? "즉시 출고 가능 제품 및 공급 상담" : language === "tr" ? "Fabrika Stok Fazlası Dağıtımı" : "Surplus Clearing Inventory Deck"} ({filteredStocks.length} {language === "ko" ? "건" : "Items"})
             </h3>
-            {isAdmin && isManageMode && filteredStocks.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  const allFilteredIds = filteredStocks.map(item => item.id);
-                  const isAllSelected = allFilteredIds.every(id => selectedStockIds.includes(id));
-                  if (isAllSelected) {
-                    setSelectedStockIds(prev => prev.filter(id => !allFilteredIds.includes(id)));
-                  } else {
-                    setSelectedStockIds(prev => {
-                      const newIds = [...prev];
-                      allFilteredIds.forEach(id => {
-                        if (!newIds.includes(id)) newIds.push(id);
-                      });
-                      return newIds;
-                    });
-                  }
-                }}
-                className="py-1 px-3 border border-gray-250 hover:border-gray-350 rounded-lg text-2xs font-extrabold text-gray-650 bg-white hover:bg-gray-50 transition-all cursor-pointer shadow-3xs flex items-center gap-1"
-              >
-                {filteredStocks.every(s => selectedStockIds.includes(s.id)) ? (
-                  <>
-                    <CheckSquare className="w-3.5 h-3.5 text-amber-550" />
-                    {language === "ko" ? "풀레이 선택 해제" : "Deselect All"}
-                  </>
-                ) : (
-                  <>
-                    <CheckSquare className="w-3.5 h-3.5 text-gray-400" />
-                    {language === "ko" ? "전량 대장 지정" : "Select All"}
-                  </>
-                )}
-              </button>
-            )}
           </div>
           <span className="text-2xs text-gray-400 font-normal">
             {language === "ko" ? "※ 제품 이미지를 클릭하시면 상세 규격과 공급 상담 정보를 확인하실 수 있습니다." : "※ Click on any product image to verify detailed specifications and supply consultations."}
           </span>
         </div>
-
-        {/* Batch Action Option Banner */}
-        {isAdmin && isManageMode && selectedStockIds.length > 0 && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-300 font-sans text-left">
-            <div className="flex items-center gap-3 text-left font-normal text-xs">
-              <div className="p-2.5 bg-amber-100 rounded-xl text-amber-800">
-                <CheckSquare className="w-5.5 h-5.5" />
-              </div>
-              <div>
-                <span className="block font-extrabold text-sm text-amber-950">
-                  {language === "ko" ? "선택 가안" : "Selected elements"}: <strong className="text-amber-600 font-black">{selectedStockIds.length}</strong> {language === "ko" ? "개" : "PCS"}
-                </span>
-                <p className="text-[11px] text-amber-700 font-light mt-0.5">{language === "ko" ? "선택 제품 공급을 한 번에 해제하거나 일괄 지울 수 있습니다." : "You can delete these indices in bulk secure parameters."}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedStockIds([])}
-                className="py-2 px-4 rounded-xl border border-amber-300 text-amber-900 bg-white hover:bg-amber-100 text-2xs sm:text-xs font-bold transition-all cursor-pointer active:scale-95"
-              >
-                {language === "ko" ? "선택 해제" : "Deselect"} ({selectedStockIds.length})
-              </button>
-              <button
-                type="button"
-                onClick={handleBatchDelete}
-                className="py-2.5 px-5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-2xs sm:text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-md active:scale-95 border-0"
-              >
-                <Trash2 className="w-3.5 h-3.5 text-white animate-none" />
-                {language === "ko" ? "일괄 영구 지우기" : "Bulk Wipe"} ({selectedStockIds.length})
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* EMPTY STATE */}
         {filteredStocks.length === 0 && (
@@ -1302,21 +1163,6 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                     <div className="absolute top-2.5 left-2.5 bg-amber-400 text-slate-950 text-[10px] py-0.5 px-2.5 rounded-md font-mono tracking-wider font-black uppercase shadow border border-white">
                       {s.id}
                     </div>
-
-                    {isAdmin && isManageMode && (
-                      <div 
-                        onClick={(e) => e.stopPropagation()}
-                        className="absolute top-2.5 right-2.5 z-10 bg-white/95 backdrop-blur-3xs rounded-xl p-1.5 shadow-md border border-gray-200/60 flex items-center justify-center cursor-pointer hover:bg-white transition-all active:scale-90"
-                        title="Select for deletion"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedStockIds.includes(s.id)}
-                          onChange={() => handleToggleSelectStock(s.id)}
-                          className="w-4 h-4 cursor-pointer accent-amber-550"
-                        />
-                      </div>
-                    )}
                   </div>
 
                   {/* Body Details Section */}
@@ -1393,7 +1239,6 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
             <table className="w-full border-collapse bg-white text-xs sm:text-sm text-left select-none font-normal">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200 text-[10px] text-gray-500 font-bold uppercase tracking-wider">
-                  {isAdmin && isManageMode && <th className="py-4 px-4 w-10 text-center">Select</th>}
                   <th className="py-4 px-4 w-24">Stock Code</th>
                   <th className="py-4 px-4">Product Sizing Specifications</th>
                   <th className="py-4 px-4 w-24">Inner ID</th>
@@ -1411,16 +1256,6 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                   const tx = getStockTranslation(s);
                   return (
                     <tr key={s.id} className="hover:bg-gray-50/50 transition-colors font-normal text-xs text-left">
-                      {isAdmin && isManageMode && (
-                        <td className="py-3 px-4 text-center">
-                          <input
-                            type="checkbox"
-                            checked={selectedStockIds.includes(s.id)}
-                            onChange={() => handleToggleSelectStock(s.id)}
-                            className="w-3.5 h-3.5 cursor-pointer accent-amber-550"
-                          />
-                        </td>
-                      )}
                       <td className="py-3 px-4 font-mono font-bold text-gray-500">{s.id}</td>
                       <td className="py-3 px-4">
                         <button
