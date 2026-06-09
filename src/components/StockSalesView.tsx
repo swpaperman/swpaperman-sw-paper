@@ -131,6 +131,7 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
   const { language, t } = useLanguage();
   
   const [stocks, setStocks] = useState<StockItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [displayMode, setDisplayMode] = useState<"grid" | "list">("grid");
   const [searchTerm, setSearchTerm] = useState("");
   
@@ -194,12 +195,14 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
           list.sort((a, b) => a.id.localeCompare(b.id));
           setStocks(list);
         }
+        setIsLoading(false);
       },
       (error) => {
         console.error("Firestore loading error:", error);
         // Fallback to DEFAULT_STOCKS in case of rules/network failure so the app doesn't break
         if (isMounted) {
           setStocks(DEFAULT_STOCKS);
+          setIsLoading(false);
         }
       }
     );
@@ -1124,8 +1127,18 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
           </span>
         </div>
 
+        {/* LOADING STATE */}
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center py-24 mb-12 border border-gray-150 rounded-3xl bg-gray-50/30">
+            <RefreshCw className="w-8 h-8 text-military-700 animate-spin mb-4" />
+            <p className="text-xs text-gray-500 font-bold">
+              {language === "ko" ? "제품 데이터베이스를 동기화하고 있습니다..." : "Synchronizing catalog database..."}
+            </p>
+          </div>
+        )}
+
         {/* EMPTY STATE */}
-        {filteredStocks.length === 0 && (
+        {!isLoading && filteredStocks.length === 0 && (
           <div className="text-center py-16 border-2 border-dashed border-gray-200 rounded-3xl mb-12">
             <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <span className="block text-gray-900 font-bold">{language === "ko" ? "일치하는 제품 품목이 존재하지 않습니다." : "No Matching Product Items Found."}</span>
