@@ -361,8 +361,8 @@ export const translations: Record<"ko" | "en" | "tr", TranslationSchema> = {
       faxLabel: "팩스: 031-353-7369",
       hqAddress: "본사공장: 경기도 화성시 만세구 향남읍 발안로 679-14",
       credentialsTitle: "역량 및 보유 지표",
-      specialist: "군수포장 정밀 지관 전공",
-      trust60: "신뢰 60주년",
+      specialist: "1964년 설립",
+      trust60: "전략 탄약지환통 제조생산",
       credentials: [
         "군수용 다구경 탄약지환통 제조생산",
         "국방규격 기반 제품 개발 및 조율 생산 숙련",
@@ -689,8 +689,8 @@ export const translations: Record<"ko" | "en" | "tr", TranslationSchema> = {
       faxLabel: "Fax: +82-31-353-7369",
       hqAddress: "HQ Factory: 679-14, Baran-ro, Hyangnam-eup, Manse-gu, Hwaseong-si, Gyeonggi-do, Republic of Korea",
       credentialsTitle: "CREDENTIALS & KEY PERFORMANCE",
-      specialist: "Composite Spiral Tubes Specialist",
-      trust60: "TRUST SINCE 1964",
+      specialist: "Established in 1964",
+      trust60: "Strategic Ammunition Container Manufacturing",
       credentials: [
         "Mfg of multi-caliber military ammo fiberboard containers",
         "Expertise in mil-spec product development & custom orders",
@@ -1017,8 +1017,8 @@ export const translations: Record<"ko" | "en" | "tr", TranslationSchema> = {
       faxLabel: "Faks: +82-31-353-7369",
       hqAddress: "Merkez Fabrika: 679-14, Baran-ro, Hyangnam-eup, Manse-gu, Hwaseong-si, Gyeonggi-do, Kore Cumhuriyeti",
       credentialsTitle: "YETKİNLİKLER VE KALİTE GÖSTERGELERİ",
-      specialist: "Kompozit Spiral Boru Uzmanı",
-      trust60: "1964'TEN BERİ GÜVEN",
+      specialist: "1964'te Kuruldu",
+      trust60: "Stratejik Mühimmat Muhafaza Kutusu İmalatı",
       credentials: [
         "Askeri çok çaplı mühimmat fiber boru üretimi",
         "Askeri standartlara göre ürün Ar-Ge ve özelleştirilmiş imalat",
