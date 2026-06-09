@@ -760,10 +760,10 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
         {/* Header Breadcrumb */}
         <div className="mb-12">
           <span className="text-xs font-mono font-bold text-kraft-700 tracking-widest uppercase bg-kraft-50 px-3 py-1 rounded inline-block">
-            INQUIRY BOARD & BILLING TERMS
+            {t.contactPage.badge}
           </span>
           <h1 className="mt-3 text-3xl sm:text-4.5xl font-black text-gray-900 tracking-tight leading-tight">
-            상담 신청 및 맞춤 수주
+            {t.contactPage.title}
           </h1>
           <div className="w-12 h-1 bg-kraft-500 mt-4 rounded-full" />
         </div>
@@ -774,10 +774,9 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
             <span className="text-[10px] sm:text-[11px] font-mono tracking-wider font-extrabold text-kraft-700 bg-kraft-100 py-0.5 px-2 rounded inline-block">
               INVOICING NOTICE
             </span>
-            <h3 className="text-sm sm:text-base font-bold text-gray-800">전자세금계산서 발행 및 은행 송금 거래 안내</h3>
+            <h3 className="text-sm sm:text-base font-bold text-gray-800">{t.contactPage.noticeTitle}</h3>
             <p className="text-xs text-gray-500 leading-relaxed font-light">
-              본사는 기업 대 기업 거래(B2B) 위주 공정으로, 온라인 신용카드 결제 등은 제공하지 않습니다. 
-              <strong> 상호 합의 날인된 가인보이스를 통해 전자세금계산서 청구/영수 및 기업 계좌 이체 방식</strong>으로 거래대금을 수령하고 거래합니다.
+              {t.contactPage.noticeDesc}
             </p>
           </div>
         </div>
@@ -794,9 +793,9 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                   <CheckCircle2 className="w-10 h-10" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-xl sm:text-2xl font-black text-emerald-950">문의 서식이 안전하게 접수되었습니다.</h3>
+                  <h3 className="text-xl sm:text-2xl font-black text-emerald-950">{t.contactPage.successTitle}</h3>
                   <p className="text-xs sm:text-sm text-emerald-800 max-w-lg mx-auto font-light leading-relaxed">
-                    접수일자 기준 영업부 가치 통제 라인 검토 후 담당자가 신속히 기재하신 연락처 및 메일주소로 조명 단가 협약을 조율 전송하여 드리겠습니다.
+                    {t.contactPage.successDesc}
                   </p>
                 </div>
                 
@@ -806,9 +805,16 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                       <Cloud className="w-5 h-5 shrink-0" />
                     </div>
                     <div className="space-y-1">
-                      <h4 className="text-xs font-bold text-emerald-950">구글 드라이브 실시간 연동 완료</h4>
+                      <h4 className="text-xs font-bold text-emerald-950">
+                        {language === "ko" ? "구글 드라이브 실시간 연동 완료" : language === "tr" ? "Google Drive Gerçek Zamanlı Senkronizasyon" : "Google Drive Real-Time Sync"}
+                      </h4>
                       <p className="text-[11px] text-gray-500 font-normal leading-relaxed">
-                        상담 서식 데이터가 구글 스프레드시트 수주 대장 및 구글 드라이브 폴더(수원지관산업_첨부파일)로 안전하게 실시간 백업되었습니다.
+                        {language === "ko" 
+                          ? "상담 서식 데이터가 구글 스프레드시트 수주 대장 및 구글 드라이브 폴더(수원지관산업_첨부파일)로 안전하게 실시간 백업되었습니다." 
+                          : language === "tr"
+                            ? "Sipariş verileriniz Google E-Tablolar'a ve projenize ait Google Drive klasörüne güvenli ve anlık şekilde senkronize edilmiştir."
+                            : "Your order details have been securely synchronized in real-time to Google Sheets and your Google Drive folder."
+                        }
                       </p>
                     </div>
                   </div>
@@ -818,40 +824,40 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                   onClick={handleResetForm}
                   className="py-2.5 px-6 rounded-xl bg-military-850 hover:bg-military-900 text-white font-bold text-xs cursor-pointer active:scale-95 transition-all"
                 >
-                  새로운 문의 접수하기
+                  {t.contactPage.anotherInquiryBtn}
                 </button>
               </div>
             ) : (
               <form onSubmit={handleFormSubmit} className="space-y-6 bg-white p-6 sm:p-8 rounded-2xl border border-gray-200">
-                <h3 className="text-base font-bold text-gray-900 border-b border-gray-150 pb-3">공급 제안 상세 서식</h3>
+                <h3 className="text-base font-bold text-gray-900 border-b border-gray-150 pb-3">{t.contactPage.subtitle}</h3>
                 
                 {/* 1. Category and Classification */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700">문의 구분 *</label>
+                    <label className="block text-xs font-semibold text-gray-700">{t.contactPage.formClassification}</label>
                     <select
                       value={classification}
                       onChange={(e) => setClassification(e.target.value)}
                       className="w-full text-xs sm:text-sm p-2.5 border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-1 focus:ring-kraft-500 font-medium"
                     >
-                      <option value="일반지관 가공">일반지관 가공 (Industrial/Standard Core)</option>
-                      <option value="탄약지환통 상담">탄약지환통 공급 협정 상담 (Ammunition Cube)</option>
-                      <option value="도면 제작 문의">고객 도면 기반 맞춤 가공</option>
-                      <option value="재고제품 협의">즉시 출고 가능 제품 공급 협의</option>
+                      <option value="일반지관 가공">{t.contactPage.class1}</option>
+                      <option value="탄약지환통 상담">{t.contactPage.class2}</option>
+                      <option value="도면 제작 문의">{t.contactPage.class3}</option>
+                      <option value="재고제품 협의">{t.contactPage.class4}</option>
                     </select>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700">제품 분류 *</label>
+                    <label className="block text-xs font-semibold text-gray-700">{t.contactPage.formProductType}</label>
                     <select
                       value={productCategory}
                       onChange={(e) => setProductCategory(e.target.value)}
                       className="w-full text-xs sm:text-sm p-2.5 border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:ring-1 focus:ring-kraft-500 font-medium"
                     >
-                      <option value="industrial">일반 산업용 및 종이 롤 지관 (Industrial)</option>
-                      <option value="defense">탄약 포장용 지환통 포장재 (Military)</option>
-                      <option value="stock">특가 잔여 보유 물자 (Surplus Stock)</option>
-                      <option value="etc">기타 가공 특화 (Others)</option>
+                      <option value="industrial">{t.contactPage.cat1}</option>
+                      <option value="defense">{t.contactPage.cat2}</option>
+                      <option value="stock">{t.contactPage.cat3}</option>
+                      <option value="etc">{t.contactPage.cat4}</option>
                     </select>
                   </div>
                 </div>
@@ -859,22 +865,22 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                 {/* 2. Customer Credentials */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700">회사명 / 상호 *</label>
+                    <label className="block text-xs font-semibold text-gray-700">{t.contactPage.formCompany}</label>
                     <input
                       type="text"
                       required
-                      placeholder="(주)수원지관산업, 개인 등"
+                      placeholder={t.contactPage.placeCompany}
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
                       className="w-full text-xs sm:text-sm p-2.5 border border-gray-200 rounded-lg focus:ring-1 focus:ring-kraft-500 outline-none"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700">담당자명 *</label>
+                    <label className="block text-xs font-semibold text-gray-700">{t.contactPage.formContactName}</label>
                     <input
                       type="text"
                       required
-                      placeholder="성함 및 직급 기재"
+                      placeholder={t.contactPage.placeContact}
                       value={contactName}
                       onChange={(e) => setContactName(e.target.value)}
                       className="w-full text-xs sm:text-sm p-2.5 border border-gray-200 rounded-lg focus:ring-1 focus:ring-kraft-500 outline-none"
@@ -884,22 +890,22 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700">연락처 *</label>
+                    <label className="block text-xs font-semibold text-gray-700">{t.contactPage.formPhone}</label>
                     <input
                       type="text"
                       required
-                      placeholder="010-0000-0000"
+                      placeholder={t.contactPage.placePhone}
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       className="w-full text-xs sm:text-sm p-2.5 border border-gray-200 rounded-lg focus:ring-1 focus:ring-kraft-500 outline-none"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700">이메일 주소 *</label>
+                    <label className="block text-xs font-semibold text-gray-700">{t.contactPage.formEmail}</label>
                     <input
                       type="email"
                       required
-                      placeholder="receive@company.com"
+                      placeholder={t.contactPage.placeEmail}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full text-xs sm:text-sm p-2.5 border border-gray-200 rounded-lg focus:ring-1 focus:ring-kraft-500 outline-none"
@@ -910,20 +916,20 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                 {/* 3. Product Info Specs */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700">제품명 (희망 형상)</label>
+                    <label className="block text-xs font-semibold text-gray-700">{t.contactPage.formProductName}</label>
                     <input
                       type="text"
-                      placeholder="예: 3인치 지관 or 81밀리 탄약지환통 등"
+                      placeholder={t.contactPage.placeProduct}
                       value={productName}
                       onChange={(e) => setProductName(e.target.value)}
                       className="w-full text-xs sm:text-sm p-2.5 border border-gray-200 rounded-lg focus:ring-1 focus:ring-kraft-500 outline-none"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700">희망 생산 수량</label>
+                    <label className="block text-xs font-semibold text-gray-700">{t.contactPage.formQuantity}</label>
                     <input
                       type="text"
-                      placeholder="숫자 및 단위 (예: 500개)"
+                      placeholder={t.contactPage.placeQty}
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value)}
                       className="w-full text-xs sm:text-sm p-2.5 border border-gray-200 rounded-lg focus:ring-1 focus:ring-kraft-500 outline-none"
@@ -932,14 +938,14 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                 </div>
 
                 {/* Core Dimensions */}
-                <span className="block text-xs font-bold text-gray-400 font-mono tracking-wider pt-2">DIMENSION SPECIFICATIONS (Optional)</span>
+                <span className="block text-xs font-bold text-gray-400 font-mono tracking-wider pt-2">{t.contactPage.formDimensions}</span>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="space-y-1.5">
                     <label 
                       className="block text-[10px] min-[370px]:text-[11px] sm:text-xs font-semibold text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis" 
-                      title="내경 (Inner Diameter - mm)"
+                      title={t.contactPage.formInnerDia}
                     >
-                      내경 (ID - mm)
+                      {t.contactPage.formInnerDia}
                     </label>
                     <input
                       type="number"
@@ -952,9 +958,9 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                   <div className="space-y-1.5">
                     <label 
                       className="block text-[10px] min-[370px]:text-[11px] sm:text-xs font-semibold text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis" 
-                      title="외경 (Approx Outer - mm)"
+                      title={t.contactPage.formOuterDia}
                     >
-                      외경 (OD - mm)
+                      {t.contactPage.formOuterDia}
                     </label>
                     <input
                       type="number"
@@ -967,9 +973,9 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                   <div className="space-y-1.5">
                     <label 
                       className="block text-[10px] min-[370px]:text-[11px] sm:text-xs font-semibold text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis" 
-                      title="두께 (Wall Thickness - mm)"
+                      title={t.contactPage.formThickness}
                     >
-                      두께 (T - mm)
+                      {t.contactPage.formThickness}
                     </label>
                     <input
                       type="number"
@@ -983,9 +989,9 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                   <div className="space-y-1.5">
                     <label 
                       className="block text-[10px] min-[370px]:text-[11px] sm:text-xs font-semibold text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis" 
-                      title="길이 (Length - mm)"
+                      title={t.contactPage.formLength}
                     >
-                      길이 (L - mm)
+                      {t.contactPage.formLength}
                     </label>
                     <input
                       type="number"
@@ -1000,7 +1006,7 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                 {/* Additional file flags */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700">도면 보유 여부</label>
+                    <label className="block text-xs font-semibold text-gray-700">{t.contactPage.formHasBlueprint}</label>
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -1011,7 +1017,7 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                             : "bg-white border-gray-200 text-gray-500"
                         }`}
                       >
-                        Y (도면 있음)
+                        {t.contactPage.blueprintY}
                       </button>
                       <button
                         type="button"
@@ -1022,13 +1028,13 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                             : "bg-white border-gray-200 text-gray-500"
                         }`}
                       >
-                        N (도면 없음)
+                        {t.contactPage.blueprintN}
                       </button>
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700">실물 사진 첨부 여부</label>
+                    <label className="block text-xs font-semibold text-gray-700">{t.contactPage.formHasPhotos}</label>
                     <div className="flex gap-2">
                       <button
                         type="button"
@@ -1039,7 +1045,7 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                             : "bg-white border-gray-200 text-gray-500"
                         }`}
                       >
-                        Y (있음)
+                        {t.contactPage.photoY}
                       </button>
                       <button
                         type="button"
@@ -1050,7 +1056,7 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                             : "bg-white border-gray-200 text-gray-500"
                         }`}
                       >
-                        N (없음)
+                        {t.contactPage.photoN}
                       </button>
                     </div>
                   </div>
@@ -1059,7 +1065,7 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                 {/* File Attachment Drag & Drop Zone */}
                 <div className="space-y-2">
                   <label className="block text-xs font-semibold text-gray-700">
-                    실물 사진 & 도면 첨부파일 등록 (Drag & Drop or Click)
+                    {t.contactPage.formUploadArea}
                   </label>
                   
                   <input
@@ -1088,9 +1094,9 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                     </div>
                     
                     <div className="space-y-0.5">
-                      <p className="text-xs font-bold text-gray-700">이곳에 파일을 드래그하여 놓거나 클릭하여 선택하세요</p>
+                      <p className="text-xs font-bold text-gray-700">{t.contactPage.formUploadDragText}</p>
                       <p className="text-[10px] text-gray-400 font-light">
-                        도면 (DWG, DXF, PDF), 이미지 (JPG, PNG) 최대 3개 | 파일당 2.5MB 제한
+                        {t.contactPage.formUploadDesc}
                       </p>
                     </div>
                   </div>
@@ -1125,7 +1131,7 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                                   {file.name}
                                 </span>
                                 <span className="text-[10px] text-gray-400 font-mono">
-                                  {file.size} • {isImage ? "실물사진" : "도면/문서"}
+                                  {file.size} • {isImage ? (language === "ko" ? "실물사진" : "Photo") : (language === "ko" ? "도면/문서" : "Blueprint/Doc")}
                                 </span>
                               </div>
                             </div>
@@ -1137,7 +1143,7 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                                 removeFile(idx);
                               }}
                               className="p-1 px-1.5 rounded-lg hover:bg-rose-50 text-gray-405 hover:text-rose-600 duration-150 cursor-pointer shrink-0"
-                              title="첨부 해제"
+                              title={language === "ko" ? "첨부 해제" : "Detach File"}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1151,15 +1157,11 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                 {/* Additional requirements comments */}
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-gray-700">
-                    {language === "ko" ? "추가 요청사항 / 스펙 상세" : "Additional Requirements / Specifications"}
+                    {t.contactPage.formComment}
                   </label>
                   <textarea
                     rows={4}
-                    placeholder={
-                      language === "ko"
-                        ? "도면 번호나 기타 비규격 가공 치수, 용도, 특수 환경 요구조건이 있으시면 기재해 주세요."
-                        : "Please enter drawing numbers, custom dimensions, specific applications, or environmental requirements."
-                    }
+                    placeholder={t.contactPage.placeComment}
                     value={comments}
                     onChange={(e) => setComments(e.target.value)}
                     className="w-full text-xs sm:text-sm p-2.5 border border-gray-200 rounded-lg focus:ring-1 focus:ring-kraft-500 outline-none resize-none bg-white font-sans"
@@ -1173,7 +1175,7 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                     className="w-full py-3 px-4 bg-military-850 hover:bg-military-900 text-white font-bold text-sm rounded-xl cursor-pointer duration-200 shadow-sm flex items-center justify-center gap-2"
                   >
                     <Send className="w-4 h-4 text-kraft-350" />
-                    {language === "ko" ? "문의 사항 온라인 제출 (전산 등록)" : "Submit Inquiry Online"}
+                    {t.contactPage.formSubmitBtn}
                   </button>
                 </div>
 
@@ -1190,17 +1192,21 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
               <div className="flex items-center gap-1.5 border-b border-gray-100 pb-3">
                 <Search className="w-4 h-4 text-kraft-750" />
                 <h4 className="text-sm font-bold text-gray-800">
-                  문의 접수 및 처리 상태 조회
+                  {language === "ko" ? "문의 접수 및 처리 상태 조회" : language === "tr" ? "Sorgulama ve B2B Durum Takibi" : "Inquiry Status & B2B Tracker"}
                 </h4>
               </div>
               <p className="text-[11px] text-gray-500 font-light leading-relaxed">
-                성함, 회사명 또는 연락처를 입력하시면 제출하신 견적 및 상세 스펙 검토 전결현황을 실시간으로 확인하실 수 있습니다.
+                {language === "ko"
+                  ? "성함, 회사명 또는 연락처를 입력하시면 제출하신 견적 및 상세 스펙 검토 전결현황을 실시간으로 확인하실 수 있습니다."
+                  : language === "tr"
+                    ? "Müşteri adını, şirketi veya telefon numarasını girerek teklif sürecinizi gerçek zamanlı olarak sorgulayabilirsiniz."
+                    : "Enter your name, company name, or phone number to track your specifications and quote status in real-time."}
               </p>
               
               <form onSubmit={handleCustomerSearch} className="flex gap-1.5">
                 <input
                   type="text"
-                  placeholder="예: 회사명, 연락처, 담당자명"
+                  placeholder={language === "ko" ? "예: 회사명, 연락처, 담당자명" : language === "tr" ? "örn: Şirket adı, kişi..." : "e.g., Company, name, or phone"}
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
                   className="flex-1 text-xs px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-kraft-530 bg-white"
@@ -1209,7 +1215,7 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                   type="submit"
                   className="px-3 bg-military-850 hover:bg-military-900 duration-150 text-white font-bold text-xs rounded-lg flex items-center justify-center cursor-pointer active:scale-95 transition-all"
                 >
-                  조회
+                  {language === "ko" ? "조회" : language === "tr" ? "Sorgular" : "Search"}
                 </button>
               </form>
 
@@ -1219,19 +1225,30 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                   {searchResult && searchResult.length > 0 ? (
                     <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                       <p className="text-[10px] text-emerald-700 font-bold">
-                        총 {searchResult.length}건의 문의 내역이 확인되었습니다.
+                        {language === "ko" 
+                          ? `총 ${searchResult.length}건의 문의 내역이 확인되었습니다.`
+                          : language === "tr"
+                            ? `Toplam ${searchResult.length} talep bulundu.`
+                            : `Found ${searchResult.length} matching inquiries.`}
                       </p>
                       {searchResult.map((inq, index) => (
                         <div key={index} className="p-3 bg-white border border-gray-150 rounded-xl shadow-2xs space-y-2 text-left">
                           <div className="flex justify-between items-start gap-1">
                             <span className="text-[10px] font-mono text-gray-400 font-semibold">{inq.id}</span>
                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                              inq.status === "대기중" ? "bg-amber-100 text-amber-800 border border-amber-200" :
-                              inq.status === "검토중" ? "bg-blue-100 text-blue-800 border border-blue-200" :
-                              inq.status === "답변완료" ? "bg-emerald-100 text-emerald-800 border border-emerald-200" :
-                              "bg-rose-100 text-rose-800 border border-rose-200"
+                              inq.status === "대기중" ? "bg-amber-105 text-amber-800 border border-amber-200" :
+                              inq.status === "검토중" ? "bg-blue-105 text-blue-800 border border-blue-200" :
+                              inq.status === "답변완료" ? "bg-emerald-105 text-emerald-800 border border-emerald-200" :
+                              "bg-rose-105 text-rose-800 border border-rose-200"
                             }`}>
-                              {inq.status}
+                              {inq.status === "대기중"
+                                ? (language === "ko" ? "대기중" : language === "tr" ? "Beklemede" : "Pending")
+                                : inq.status === "검토중"
+                                  ? (language === "ko" ? "검토중" : language === "tr" ? "İnceleniyor" : "Under Review")
+                                  : inq.status === "답변완료"
+                                    ? (language === "ko" ? "답변완료" : language === "tr" ? "Tamamlandı" : "Completed")
+                                    : (language === "ko" ? "보류됨" : language === "tr" ? "Ertelendi" : "Suspended")
+                              }
                             </span>
                           </div>
                           <div className="space-y-1">
@@ -1246,9 +1263,11 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                           
                           {/* Manager official memo/feedback display */}
                           <div className="bg-kraft-50/60 rounded-lg p-2.5 border border-kraft-150 space-y-1">
-                            <span className="block text-[8px] font-bold text-kraft-700 uppercase tracking-widest font-mono">수원지관 대응 검토 피드백</span>
+                            <span className="block text-[8px] font-bold text-kraft-700 uppercase tracking-widest font-mono">
+                              {language === "ko" ? "수원지관 대응 검토 피드백" : language === "tr" ? "MÜHENDİSLİK GERİ BİLDİRİMİ" : "TECHNICAL TEAM FEEDBACK"}
+                            </span>
                             <p className="text-[10.5px] text-gray-700 leading-normal font-sans font-medium whitespace-pre-line">
-                              {inq.managerMemo || "대표 영업부 전결 검토가 안전하게 보증 진행 중입니다."}
+                              {inq.managerMemo || (language === "ko" ? "대표 영업부 전결 검토가 안전하게 보증 진행 중입니다." : language === "tr" ? "Teknik ekibimiz talebinizi değerlendirmektedir." : "Our industrial sales department is currently reviewing your specifications.")}
                             </p>
                           </div>
                         </div>
@@ -1256,8 +1275,22 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                     </div>
                   ) : (
                     <div className="text-center py-4 bg-gray-50 rounded-xl border border-gray-200 text-gray-400 text-[11px] font-light">
-                      🔍 입력하신 정보로 등록된 문의 내역이 없습니다.<br />
-                      <span className="text-[9px] text-gray-400 block mt-1">성함이나 회사명을 정확히 기재하셨는지 다시 검토해 주세요.</span>
+                      {language === "ko" ? (
+                        <>
+                          🔍 입력하신 정보로 등록된 문의 내역이 없습니다.<br />
+                          <span className="text-[9px] text-gray-400 block mt-1">성함이나 회사명을 정확히 기재하셨는지 다시 검토해 주세요.</span>
+                        </>
+                      ) : language === "tr" ? (
+                        <>
+                          🔍 Girilen bilgilere ait kayıt bulunamadı.<br />
+                          <span className="text-[9px] text-gray-400 block mt-1">Lütfen şirket veya kişi adını doğru girdiğinizden emin olun.</span>
+                        </>
+                      ) : (
+                        <>
+                          🔍 No matching inquiry records found.<br />
+                          <span className="text-[9px] text-gray-400 block mt-1">Please verify that spelling of the name or company is correct.</span>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1300,7 +1333,11 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               </div>
               <p className="text-[11px] text-gray-500 font-light leading-relaxed">
-                관리자가 수신 고객 문의 전산 리포트를 관리하고 처리상태를 업데이트하는 법인전용 통제 대치입니다.
+                {language === "ko"
+                  ? "관리자가 수신 고객 문의 전산 리포트를 관리하고 처리상태를 업데이트하는 법인전용 통제 장치입니다."
+                  : language === "tr"
+                    ? "Yöneticilerin müşteri taleplerini yönetmesi ve sipariş durumlarını güncellenmesi için özel yetkili yönetim panelidir."
+                    : "Authorized administrative console for managing client specifications and real-time status updates."}
               </p>
               
               <button
@@ -1316,7 +1353,9 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                 className="w-full py-2.5 rounded-lg bg-military-850 hover:bg-military-900 duration-200 text-white font-bold text-xs cursor-pointer flex items-center justify-center gap-1"
               >
                 <Lock className="w-3.5 h-3.5 text-kraft-350" />
-                {isAdminPanelOpen ? "관리자 판넬 닫기" : "관리자 모드 (Admin Portal)"}
+                {isAdminPanelOpen 
+                  ? (language === "ko" ? "관리자 판넬 닫기" : "Close Admin Panel") 
+                  : (language === "ko" ? "관리자 모드 (Admin Portal)" : "Admin Portal")}
               </button>
             </div>
 
