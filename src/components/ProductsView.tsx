@@ -128,7 +128,7 @@ export default function ProductsView({
               {/* Product Visual Photo */}
               <div className="relative h-48 sm:h-56 overflow-hidden bg-gray-100 border-b border-gray-100">
                 <img 
-                  src="https://lh3.googleusercontent.com/d/1uqFLlJdJYsa499QEw2glDiP4n-02x5lK" 
+                  src="https://lh3.googleusercontent.com/d/1m-VV6yFIZ8n0B6j9dnrb3TyFlMZTxdu6" 
                   alt="Ammunition Tubes" 
                   referrerPolicy="no-referrer"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
@@ -259,6 +259,7 @@ export default function ProductsView({
 
         </div>
 
+
         {/* Content Divider */}
         <div className="border-t border-gray-100 pt-8 mb-4">
           <div className="flex items-center gap-3">
@@ -269,6 +270,29 @@ export default function ProductsView({
             <div className="h-px bg-gray-100 flex-1" />
           </div>
         </div>
+
+        {/* Conditional Image Banner below Content Divider - both Ammunition and Industrial Paper Tubes */}
+        {selectedTab === "industrial" && (
+          <div className="mt-4 mb-8 w-full rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-xl hover:shadow-2xl transition-all max-w-5xl mx-auto">
+            <img 
+              src="https://lh3.googleusercontent.com/d/1CnucuQ2ZcrDp9eCCILOreLflHwIUdyI7" 
+              alt="General Industrial Paper Tubes Detail Grid" 
+              referrerPolicy="no-referrer"
+              className="w-full h-auto block hover:scale-[1.01] transition-transform duration-500"
+            />
+          </div>
+        )}
+
+        {selectedTab === "ammunition" && (
+          <div className="mt-4 mb-8 w-full rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-xl hover:shadow-2xl transition-all max-w-5xl mx-auto">
+            <img 
+              src="https://lh3.googleusercontent.com/d/1uqFLlJdJYsa499QEw2glDiP4n-02x5lK" 
+              alt="Ammunition Tubes Detail Grid" 
+              referrerPolicy="no-referrer"
+              className="w-full h-auto block hover:scale-[1.01] transition-transform duration-500"
+            />
+          </div>
+        )}
 
         {/* Dynamic Nested View Rendering */}
         <div id="nested-product-content" className="relative">

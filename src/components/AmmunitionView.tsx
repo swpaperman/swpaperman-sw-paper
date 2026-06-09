@@ -468,27 +468,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
           </div>
         )}
 
-        {/* Horizontal Image Showcase */}
-        <div className="relative w-full mb-12 space-y-4">
-          <div className="absolute -top-6 -left-6 w-48 h-48 bg-kraft-100/30 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-6 -right-6 w-48 h-48 bg-military-100/20 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="flex items-center gap-2">
-            <span className="bg-military-850 text-white text-[9px] sm:text-xs font-mono font-bold tracking-wider px-3 py-1 rounded shadow-xs uppercase">
-              AMMUNITION TUBE SHOWCASE
-            </span>
-            <div className="h-px bg-gray-200 flex-1" />
-          </div>
 
-          <div className="relative rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-xl hover:shadow-2xl transition-all">
-            <img 
-              src="https://lh3.googleusercontent.com/d/1uqFLlJdJYsa499QEw2glDiP4n-02x5lK"
-              alt={language === "ko" ? "수원지관산업 고강도 탄약지환통 제품" : "Suwon High-Strength Ammunition Containers"}
-              className="w-full h-auto block hover:scale-[1.01] transition-transform duration-500"
-              referrerPolicy="no-referrer"
-            />
-          </div>
-        </div>
 
         {/* Detailed Copy & Warning Layout */}
         <div className="max-w-5xl mx-auto space-y-8 text-left leading-relaxed mb-16">
