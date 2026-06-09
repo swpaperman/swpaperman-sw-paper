@@ -821,6 +821,15 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
               referrerPolicy="no-referrer"
             />
           </div>
+
+          <div className="relative rounded-2xl border border-gray-200 overflow-hidden bg-white shadow-xl hover:shadow-2xl transition-all">
+            <img 
+              src="https://lh3.googleusercontent.com/d/1rQag_cgI0fS1LYRjaAG56X6OL4u0EvWq"
+              alt={language === "ko" ? "수원지관산업 탄약지환통 추가 상세 구조 및 마개 디테일" : "SUWON Ammunition Container Additional Mechanical Details"}
+              className="w-full h-auto block hover:scale-[1.01] transition-transform duration-500"
+              referrerPolicy="no-referrer"
+            />
+          </div>
         </div>
 
         {/* Actions Button Zone */}
