@@ -174,6 +174,15 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
   };
 
   const getStockTranslation = (item: StockItem) => {
+    // Find if there is a default template matching this ID
+    const defaultItem = DEFAULT_STOCKS.find(d => d.id === item.id);
+    
+    // Check if the administrator customized the values
+    const isNameCustomized = defaultItem ? (item.name !== defaultItem.name) : true;
+    const isConditionCustomized = defaultItem ? (item.condition !== defaultItem.condition) : true;
+    const isPriceCustomized = defaultItem ? (item.approxPrice !== defaultItem.approxPrice) : true;
+    const isDescCustomized = defaultItem ? (item.desc !== defaultItem.desc) : true;
+
     if (language === "ko") {
       return {
         name: item.name,
@@ -182,87 +191,94 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
         desc: item.desc || ""
       };
     } else if (language === "tr") {
-      if (item.id === "STK-001") {
-        return {
-          name: "A-Sınıfı Yüksek Mukavemetli Kraft Ambalaj Borusu",
-          condition: "Kusursuz (Sıfır Nem)",
-          price: "Teklif Alın",
-          desc: "Mekanik basınca karşı üst düzey sönümleme sağlayan, spiral sarımlı ve yüksek sıkıştırılmış kraft mukavemetli paketleme rulosudur."
-        };
-      } else if (item.id === "STK-002") {
-        return {
-          name: "Mühimmat Kutusu İmalat Fazlası (Kapak Montajsız)",
-          condition: "Kusursuz (Askeri Ambalaj)",
-          price: "Özel Fiyat",
-          desc: "Kore savunma standartlarına ve KDS 8140 şartnamesine tam uyumlu olarak üretilen boş mühimmat koruma silindiri fazlasıdır."
-        };
-      } else if (item.id === "STK-003") {
-        return {
-          name: "Büyük Ebatlı Bobin Sarım Masurası (6 İnç)",
-          condition: "Çok İyi",
-          price: "Teklif Alın",
-          desc: "Büyük sanayi rulolarına mukavemet sağlamak amacıyla spiral dikişli, 152.4 mm geniş kalıpta imal edilmiş endüstriyel bobin borusu."
-        };
-      } else if (item.id === "STK-004") {
-        return {
-          name: "Mini Barkod Şeridi ve Ribon Göbeği (1 İnç)",
-          condition: "Çok İyi (Toplu Paket)",
-          price: "Teklif Alın",
-          desc: "Barkod şeridi sarımları, etiketleme aparatları ve hassas makaralar için üretilmiş ince çeperli mini karton masura."
-        };
-      } else if (item.id === "STK-005") {
-        return {
-          name: "Ağır Nakliye İçin Dış Çeper Koruma Kovanı",
-          condition: "Kusursuz",
-          price: "Teklif Alın",
-          desc: "Taşıma esnasında dış darbelerden kolayca hasar görebilecek pahalı silindir, metal şaft ve kalıp millerini tamamen muhafaza eden dış darbe önleyici kovan."
-        };
+      // If customized, use the customized value directly. Otherwise, use translated preset.
+      let name = isNameCustomized ? item.name : "";
+      let condition = isConditionCustomized ? item.condition : "";
+      let price = isPriceCustomized ? item.approxPrice : "";
+      let desc = isDescCustomized ? (item.desc || "") : "";
+
+      if (!isNameCustomized) {
+        if (item.id === "STK-001") name = "A-Sınıfı Yüksek Mukavemetli Kraft Ambalaj Borusu";
+        else if (item.id === "STK-002") name = "Mühimmat Kutusu İmalat Fazlası (Kapak Montajsız)";
+        else if (item.id === "STK-003") name = "Büyük Ebatlı Bobin Sarım Masurası (6 İnç)";
+        else if (item.id === "STK-004") name = "Mini Barkod Şeridi ve Ribon Göbeği (1 İnç)";
+        else if (item.id === "STK-005") name = "Ağır Nakliye İçin Dış Çeper Koruma Kovanı";
+        else name = item.name;
       }
+
+      if (!isConditionCustomized) {
+        if (item.id === "STK-001") condition = "Kusursuz (Sıfır Nem)";
+        else if (item.id === "STK-002") condition = "Kusursuz (Askeri Ambalaj)";
+        else if (item.id === "STK-003") condition = "Çok İyi";
+        else if (item.id === "STK-004") condition = "Çok İyi (Toplu Paket)";
+        else if (item.id === "STK-005") condition = "Kusursuz";
+        else condition = item.condition;
+      }
+
+      if (!isPriceCustomized) {
+        if (item.id === "STK-001") price = "Teklif Alın";
+        else if (item.id === "STK-002") price = "Özel Fiyat";
+        else if (item.id === "STK-003") price = "Teklif Alın";
+        else if (item.id === "STK-004") price = "Teklif Alın";
+        else if (item.id === "STK-005") price = "Teklif Alın";
+        else price = item.approxPrice;
+      }
+
+      if (!isDescCustomized) {
+        if (item.id === "STK-001") desc = "Mekanik basınca karşı üst düzey sönümleme sağlayan, spiral sarımlı ve yüksek sıkıştırılmış kraft mukavemetli paketleme rulosudur.";
+        else if (item.id === "STK-002") desc = "Kore savunma standartlarına ve KDS 8140 şartnamesine tam uyumlu olarak üretilen boş mühimmat koruma silindiri fazlasıdır.";
+        else if (item.id === "STK-003") desc = "Büyük sanayi rulolarına mukavemet sağlamak amacıyla spiral dikişli, 152.4 mm geniş kalıpta imal edilmiş endüstriyel bobin borusu.";
+        else if (item.id === "STK-004") desc = "Barkod şeridi sarımları, etiketleme aparatları ve hassas makaralar için üretilmiş ince çeperli mini karton masura.";
+        else if (item.id === "STK-005") desc = "Taşıma esnasında dış darbelerden kolayca hasar görebilecek pahalı silindir, metal şaft ve kalıp millerini tamamen muhafaza eden dış darbe önleyici kovan.";
+        else desc = item.desc || "";
+      }
+
+      return { name, condition, price, desc };
     } else {
       // English
-      if (item.id === "STK-001") {
-        return {
-          name: "Grade-A High-Strength Kraft Packaging Core",
-          condition: "Pristine",
-          price: "Negotiable Quote",
-          desc: "High-density multi-ply kraft core optimized for heavy-duty winding reels and extreme shipping conditions."
-        };
-      } else if (item.id === "STK-002") {
-        return {
-          name: "Ammunition Container Pilot Production Overstock",
-          condition: "Pristine (Airtight Storage)",
-          price: "Specially Discounted",
-          desc: "Tested ammunition container shell overflow, compliant with military specifications. Sealed waterproofing layers. Unassembled metal caps."
-        };
-      } else if (item.id === "STK-003") {
-        return {
-          name: "Heavy Tension Industrial Winding Core (6-Inch)",
-          condition: "Excellent Quality",
-          price: "Negotiable Quote",
-          desc: "Stiff spiral cardboard core designed to sustain deep radial wrapping stress for stretch film rolls and industrial textiles."
-        };
-      } else if (item.id === "STK-004") {
-        return {
-          name: "Miniature Spindle Ribbon Winding Core (1-Inch)",
-          condition: "Excellent (Bulk Box)",
-          price: "Negotiable Quote",
-          desc: "Compact lightweight spindle core suited for printing ribbons, decorative tape spooling, and small adhesive lines."
-        };
-      } else if (item.id === "STK-005") {
-        return {
-          name: "Machinery Spindle Heavy Protective Packing Sleeve",
-          condition: "Pristine",
-          price: "Negotiable Quote",
-          desc: "Calibrated outer sleeve designed to completely shield sensitive components, steel shafts, and costly tool mold margins during sea shipping."
-        };
+      let name = isNameCustomized ? item.name : "";
+      let condition = isConditionCustomized ? item.condition : "";
+      let price = isPriceCustomized ? item.approxPrice : "";
+      let desc = isDescCustomized ? (item.desc || "") : "";
+
+      if (!isNameCustomized) {
+        if (item.id === "STK-001") name = "Grade-A High-Strength Kraft Packaging Core";
+        else if (item.id === "STK-002") name = "Ammunition Container Pilot Production Overstock";
+        else if (item.id === "STK-003") name = "Heavy Tension Industrial Winding Core (6-Inch)";
+        else if (item.id === "STK-004") name = "Miniature Spindle Ribbon Winding Core (1-Inch)";
+        else if (item.id === "STK-005") name = "Machinery Spindle Heavy Protective Packing Sleeve";
+        else name = item.name;
       }
+
+      if (!isConditionCustomized) {
+        if (item.id === "STK-001") condition = "Pristine";
+        else if (item.id === "STK-002") condition = "Pristine (Airtight Storage)";
+        else if (item.id === "STK-003") condition = "Excellent Quality";
+        else if (item.id === "STK-004") condition = "Excellent (Bulk Box)";
+        else if (item.id === "STK-005") condition = "Pristine";
+        else condition = item.condition;
+      }
+
+      if (!isPriceCustomized) {
+        if (item.id === "STK-001") price = "Negotiable Quote";
+        else if (item.id === "STK-002") price = "Specially Discounted";
+        else if (item.id === "STK-003") price = "Negotiable Quote";
+        else if (item.id === "STK-004") price = "Negotiable Quote";
+        else if (item.id === "STK-005") price = "Negotiable Quote";
+        else price = item.approxPrice;
+      }
+
+      if (!isDescCustomized) {
+        if (item.id === "STK-001") desc = "High-density multi-ply kraft core optimized for heavy-duty winding reels and extreme shipping conditions.";
+        else if (item.id === "STK-002") desc = "Tested ammunition container shell overflow, compliant with military specifications. Sealed waterproofing layers. Unassembled metal caps.";
+        else if (item.id === "STK-003") desc = "Stiff spiral cardboard core designed to sustain deep radial wrapping stress for stretch film rolls and industrial textiles.";
+        else if (item.id === "STK-004") desc = "Compact lightweight spindle core suited for printing ribbons, decorative tape spooling, and small adhesive lines.";
+        else if (item.id === "STK-005") desc = "Calibrated outer sleeve designed to completely shield sensitive components, steel shafts, and costly tool mold margins during sea shipping.";
+        else desc = item.desc || "";
+      }
+
+      return { name, condition, price, desc };
     }
-    return {
-      name: item.name,
-      condition: item.condition,
-      price: item.approxPrice,
-      desc: item.desc || ""
-    };
   };
 
   // Google Drive sharing URL parsing parser hook
