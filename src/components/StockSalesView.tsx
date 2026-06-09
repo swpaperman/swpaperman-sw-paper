@@ -151,17 +151,27 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
 
   // Storage and Initialization
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "stocks"), async (snapshot) => {
-      if (snapshot.empty) {
-        // Seed database if empty
-        for (const defaultItem of DEFAULT_STOCKS) {
-          try {
-            await setDoc(doc(db, "stocks", defaultItem.id), defaultItem);
-          } catch (err) {
-            console.error("Error seeding stock:", err);
-          }
+    let isMounted = true;
+
+    const checkAndSeed = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "stocks"));
+        if (querySnapshot.empty && isMounted) {
+          // If completely empty, push the 5 defaults at once
+          await Promise.all(
+            DEFAULT_STOCKS.map((item) => setDoc(doc(db, "stocks", item.id), item))
+          );
         }
-      } else {
+      } catch (err) {
+        console.error("Failed to check/seed default stock items:", err);
+      }
+    };
+
+    checkAndSeed();
+
+    const unsubscribe = onSnapshot(collection(db, "stocks"), (snapshot) => {
+      if (!isMounted) return;
+      if (!snapshot.empty) {
         const list: StockItem[] = [];
         snapshot.forEach((docSnap) => {
           list.push(docSnap.data() as StockItem);
@@ -169,6 +179,8 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
         // Sort stock items by ID so they stay structured beautifully
         list.sort((a, b) => a.id.localeCompare(b.id));
         setStocks(list);
+      } else {
+        setStocks([]);
       }
     }, (error) => {
       console.error("Firestore loading error:", error);
@@ -179,7 +191,10 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
       setIsAdmin(true);
     }
 
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const getStockTranslation = (item: StockItem) => {
