@@ -428,159 +428,188 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
           </div>
 
           {/* 2.2 WIDESCREEN PARTNER ECOSYSTEM */}
-          <div className="mt-16 pt-10 border-t border-gray-200/80">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-              <div className="text-left space-y-1">
+          <div className="mt-20 pt-12 border-t border-gray-200/90">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+              <div className="text-left space-y-2 max-w-4xl">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-military-600 animate-pulse" />
-                  <h3 className="text-sm font-black text-military-900 uppercase tracking-tight font-sans">
+                  <span className="w-2.5 h-2.5 rounded-full bg-military-600 animate-pulse shrink-0" />
+                  <h3 className="text-sm sm:text-base font-black text-military-950 uppercase tracking-wider font-sans">
                     {t.home.partnersHeader}
                   </h3>
                 </div>
-                <p className="text-xs text-gray-400 font-light">
+                <p className="text-xs sm:text-sm text-gray-600 font-normal leading-relaxed">
                   {language === "ko" 
                     ? "60년 신전통의 기술력으로 대한민국 자주국방의 핵심 유관 기관 및 체계(완성탄) 정밀 설계 기업에 공인 보존 포재를 독자 가공·공급합니다."
-                    : "Using certified 60-year precision manufacturing, Suwon Paper is the exclusive core contractor supplying to Defense Authorities and Completed Ammunition Companies."
+                    : language === "tr"
+                      ? "60 yıllık birikimli üretim teknolojisiyle, Güney Kore milli savunmasının kilit kurumlarına ve mühimmat geliştirme şirketlerine onaylı koruyucu muhafazalar tedarik etmekteyiz."
+                      : "Using certified 60-year precision manufacturing, Suwon Paper is the exclusive core contractor supplying to Defense Authorities and Completed Ammunition Companies."
                   }
                 </p>
               </div>
               
-              <div className="flex items-center gap-2 px-3 py-1 bg-military-50 border border-military-200/50 rounded-full self-start md:self-auto">
-                <span className="text-[10px] text-military-800 font-bold font-mono">MIL-SPEC 100% COMPLIANT</span>
+              <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-military-50 to-military-100/50 border border-military-200 rounded-full self-start md:self-auto shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] sm:text-xs text-military-900 font-extrabold font-mono tracking-wide">MIL-SPEC 100% COMPLIANT</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* Panel A: 핵심 수요군 */}
-              <div className="lg:col-span-5 bg-white border border-gray-200/60 rounded-2xl p-5 space-y-4 shadow-3xs flex flex-col justify-between">
-                <div className="text-left">
-                  <h4 className="text-xs font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-2.5">
-                    <span className="py-0.5 px-2 rounded-full bg-military-50 text-military-800 font-mono text-[9px] font-black">
+              <div className="lg:col-span-5 bg-gradient-to-b from-white to-gray-50/30 border border-gray-200 rounded-2xl p-6 sm:p-7 space-y-6 shadow-xs flex flex-col justify-between">
+                <div className="text-left space-y-3">
+                  <h4 className="font-bold text-gray-900 flex items-center gap-2 border-b border-gray-150 pb-3.5">
+                    <span className="py-0.5 px-2.5 rounded-md bg-military-900 text-kraft-350 font-mono text-[10px] sm:text-xs font-black">
                       01
                     </span>
-                    <span className="font-extrabold text-sm text-gray-900">핵심 수요군</span>
-                    <span className="text-[10px] text-gray-400 font-normal ml-auto font-mono">Defense Authorities</span>
+                    <span className="font-black text-sm sm:text-base text-gray-950 tracking-tight">
+                      {language === "ko" ? "핵심 수요군" : language === "tr" ? "Kilit Kurumlar" : "Defense Authorities"}
+                    </span>
+                    <span className="text-[10px] sm:text-xs text-gray-400 font-medium ml-auto font-mono">Defense Authorities</span>
                   </h4>
-                  <p className="text-[11px] text-gray-500 font-light mt-2 leading-relaxed">
-                    군 전술 규격을 관리 수립하고 국가 영토 방위를 책임지는 핵심 거점 기관군입니다. 60년 노하우로 설계된 당사의 품질 규격을 전적으로 신뢰합니다.
+                  <p className="text-xs sm:text-sm text-gray-500 leading-relaxed font-light">
+                    {language === "ko"
+                      ? "군 전술 규격을 관리 수립하고 국가 영토 방위를 책임지는 핵심 거점 기관군입니다. 60년 노하우로 설계된 당사의 품질 규격을 전적으로 신뢰합니다."
+                      : language === "tr"
+                        ? "Askeri taktik şartnameleri yöneten ve ulusal savunmadan sorumlu olan kurumlardır. 60 yıllık uzmanlığımıza ve kalite standartlarımıza tam güven duyarlar."
+                        : "Key defense organizations responsible for establishing military specifications and national territorial defense, fully trusting our 60-year engineering heritage."}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2.5 pt-3">
+                <div className="grid grid-cols-1 min-[480px]:grid-cols-3 gap-4 pt-4">
                   {/* 국방부 */}
-                  <div className="p-2 bg-gray-50/55 border border-gray-150 rounded-xl flex flex-col items-center justify-center text-center hover:border-military-550 hover:bg-white transition-all group cursor-default shadow-3xs">
-                    <div className="h-10 w-full flex items-center justify-center">
+                  <div className="p-4 bg-white border border-gray-200 hover:border-military-500 rounded-2xl flex flex-col items-center justify-center text-center hover:bg-neutral-50/50 hover:shadow-md transition-all duration-300 group cursor-default">
+                    <div className="h-14 sm:h-18 w-full flex items-center justify-center">
                       <img 
                         src="https://lh3.googleusercontent.com/d/1TMm1GB-kYqNNI3rTaKo6yLr7wd6NDKwL"
                         alt="Ministry of National Defense"
-                        className="max-h-8 max-w-full object-contain filter group-hover:scale-105 transition-all"
+                        className="max-h-12 sm:max-h-14 max-w-full object-contain filter group-hover:scale-105 transition-all duration-300"
                         referrerPolicy="no-referrer"
                       />
                     </div>
-                    <span className="block text-[10px] font-extrabold text-gray-800 tracking-tight mt-2 leading-none whitespace-nowrap">대한민국 국방부</span>
-                    <span className="block text-[8px] text-gray-400 font-mono scale-90 mt-0.5 whitespace-nowrap">MND</span>
+                    <span className="block text-xs sm:text-[13px] font-extrabold text-gray-850 tracking-tight mt-3 leading-none whitespace-nowrap">
+                      {language === "ko" ? "대한민국 국방부" : "국방부 (MND)"}
+                    </span>
+                    <span className="block text-[9px] sm:text-[10px] text-gray-400 font-mono scale-90 mt-1 whitespace-nowrap font-medium">MND</span>
                   </div>
 
                   {/* 방사청 */}
-                  <div className="p-2 bg-gray-50/55 border border-gray-150 rounded-xl flex flex-col items-center justify-center text-center hover:border-military-550 hover:bg-white transition-all group cursor-default shadow-3xs">
-                    <div className="h-10 w-full flex items-center justify-center">
+                  <div className="p-4 bg-white border border-gray-200 hover:border-military-500 rounded-2xl flex flex-col items-center justify-center text-center hover:bg-neutral-50/50 hover:shadow-md transition-all duration-300 group cursor-default">
+                    <div className="h-14 sm:h-18 w-full flex items-center justify-center">
                       <img 
                         src="https://lh3.googleusercontent.com/d/1UT5mmcEtz_gh392ncjV3jYIWIEPeBh39"
                         alt="DAPA"
-                        className="max-h-8 max-w-full object-contain filter group-hover:scale-105 transition-all"
+                        className="max-h-12 sm:max-h-14 max-w-full object-contain filter group-hover:scale-105 transition-all duration-300"
                         referrerPolicy="no-referrer"
                       />
                     </div>
-                    <span className="block text-[10px] font-extrabold text-gray-800 tracking-tight mt-2 leading-none whitespace-nowrap">방위사업청</span>
-                    <span className="block text-[8px] text-gray-400 font-mono scale-90 mt-0.5 whitespace-nowrap">DAPA</span>
+                    <span className="block text-xs sm:text-[13px] font-extrabold text-gray-850 tracking-tight mt-3 leading-none whitespace-nowrap">
+                      {language === "ko" ? "방위사업청" : "DAPA"}
+                    </span>
+                    <span className="block text-[9px] sm:text-[10px] text-gray-400 font-mono scale-90 mt-1 whitespace-nowrap font-medium">DAPA</span>
                   </div>
 
                   {/* 탄지원사 */}
-                  <div className="p-2 bg-gray-50/55 border border-gray-150 rounded-xl flex flex-col items-center justify-center text-center hover:border-military-550 hover:bg-white transition-all group cursor-default shadow-3xs">
-                    <div className="h-10 w-full flex items-center justify-center">
+                  <div className="p-4 bg-white border border-gray-200 hover:border-military-500 rounded-2xl flex flex-col items-center justify-center text-center hover:bg-neutral-50/50 hover:shadow-md transition-all duration-300 group cursor-default">
+                    <div className="h-14 sm:h-18 w-full flex items-center justify-center">
                       <img 
                         src="https://lh3.googleusercontent.com/d/1YeEFMNVO4g_Bs1gqDJGGTifgltIHrH8H"
                         alt="Army Ammunition Support Command"
-                        className="max-h-8 max-w-full object-contain filter group-hover:scale-105 transition-all"
+                        className="max-h-12 sm:max-h-14 max-w-full object-contain filter group-hover:scale-105 transition-all duration-300"
                         referrerPolicy="no-referrer"
                       />
                     </div>
-                    <span className="block text-[10px] font-extrabold text-gray-800 tracking-tight mt-2 leading-none whitespace-nowrap">육군 탄지원사</span>
-                    <span className="block text-[8px] text-gray-400 font-mono scale-90 mt-0.5 whitespace-nowrap">AASC</span>
+                    <span className="block text-xs sm:text-[13px] font-extrabold text-gray-850 tracking-tight mt-3 leading-none whitespace-nowrap">
+                      {language === "ko" ? "육군 탄지원사" : "육군 탄지원사 (AASC)"}
+                    </span>
+                    <span className="block text-[9px] sm:text-[10px] text-gray-400 font-mono scale-90 mt-1 whitespace-nowrap font-medium">AASC</span>
                   </div>
                 </div>
               </div>
 
               {/* Panel B: 체계(완성탄)업체 */}
-              <div className="lg:col-span-7 bg-white border border-gray-200/60 rounded-2xl p-5 space-y-4 shadow-3xs flex flex-col justify-between">
-                <div className="text-left">
-                  <h4 className="text-xs font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-2.5">
-                    <span className="py-0.5 px-2 rounded-full bg-kraft-50 text-kraft-800 font-mono text-[9px] font-black">
+              <div className="lg:col-span-7 bg-gradient-to-b from-white to-gray-50/30 border border-gray-200 rounded-2xl p-6 sm:p-7 space-y-6 shadow-xs flex flex-col justify-between">
+                <div className="text-left space-y-3">
+                  <h4 className="font-bold text-gray-900 flex items-center gap-2 border-b border-gray-150 pb-3.5">
+                    <span className="py-0.5 px-2.5 rounded-md bg-kraft-900 text-kraft-350 font-mono text-[10px] sm:text-xs font-black">
                       02
                     </span>
-                    <span className="font-extrabold text-sm text-gray-900">체계(완성탄)업체 & 주요 협력사</span>
-                    <span className="text-[10px] text-gray-400 font-normal ml-auto font-mono">Completed Ammunition Partners</span>
+                    <span className="font-black text-sm sm:text-base text-gray-950 tracking-tight">
+                      {language === "ko" ? "체계(완성탄)업체 & 주요 협력사" : language === "tr" ? "Mühimmat Entegratörleri" : "Ammunition System Integrators"}
+                    </span>
+                    <span className="text-[10px] sm:text-xs text-gray-400 font-medium ml-auto font-mono font-sans">Ammunition Partners</span>
                   </h4>
-                  <p className="text-[11px] text-gray-500 font-light mt-2 leading-relaxed">
-                    지환통에 보존적재될 최종 탄약 및 전술 완성탄 하드웨어를 설계·조립하는 국내 굴지의 대표 방위산업종합 제조 파트너입니다.
+                  <p className="text-xs sm:text-sm text-gray-500 leading-relaxed font-light">
+                    {language === "ko"
+                      ? "지환통에 보존적재될 최종 탄약 및 전술 완성탄 하드웨어를 설계·조립하는 국내 굴지의 대표 방위산업종합 제조 파트너입니다."
+                      : language === "tr"
+                        ? "Karton muhafazaların içine yerleştirilecek nihai canlı mühimmatları ve taktik donanımları tasarlayıp birleştiren lider savunma sanayii entegratörleridir."
+                        : "Leading defense prime contractors that design and assemble state-of-the-art live ammunition and tactical weapon hardware loaded inside our containers."}
                   </p>
                 </div>
 
-                <div className="grid grid-cols-4 gap-2.5 pt-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
                   {/* 한화에어로 */}
-                  <div className="p-2 bg-gray-50/55 border border-gray-150 rounded-xl flex flex-col items-center justify-center text-center hover:border-kraft-550 hover:bg-white transition-all group cursor-default shadow-3xs">
-                    <div className="h-10 w-full flex items-center justify-center">
+                  <div className="p-4 bg-white border border-gray-200 hover:border-kraft-500 rounded-2xl flex flex-col items-center justify-center text-center hover:bg-neutral-50/50 hover:shadow-md transition-all duration-300 group cursor-default">
+                    <div className="h-14 sm:h-18 w-full flex items-center justify-center">
                       <img 
                         src="https://lh3.googleusercontent.com/d/1q04UKpLEFNpXhY5L49l5usZC7kzHaZX5"
                         alt="Hanwha Aerospace"
-                        className="max-h-8 max-w-full object-contain filter group-hover:scale-105 transition-all"
+                        className="max-h-12 sm:max-h-14 max-w-full object-contain filter group-hover:scale-105 transition-all duration-300"
                         referrerPolicy="no-referrer"
                       />
                     </div>
-                    <span className="block text-[10px] font-extrabold text-gray-850 tracking-tight mt-2 leading-none whitespace-nowrap">한화에어로</span>
-                    <span className="block text-[8px] text-gray-400 font-mono scale-90 mt-0.5 whitespace-nowrap">Hanwha</span>
+                    <span className="block text-xs sm:text-[13px] font-extrabold text-gray-850 tracking-tight mt-3 leading-none whitespace-nowrap">
+                      {language === "ko" ? "한화에어로" : "한화에어로"}
+                    </span>
+                    <span className="block text-[9px] sm:text-[10px] text-gray-400 font-mono scale-90 mt-1 whitespace-nowrap font-medium">Hanwha</span>
                   </div>
 
                   {/* 풍산 */}
-                  <div className="p-2 bg-gray-50/55 border border-gray-150 rounded-xl flex flex-col items-center justify-center text-center hover:border-kraft-550 hover:bg-white transition-all group cursor-default shadow-3xs">
-                    <div className="h-10 w-full flex items-center justify-center">
+                  <div className="p-4 bg-white border border-gray-200 hover:border-kraft-500 rounded-2xl flex flex-col items-center justify-center text-center hover:bg-neutral-50/50 hover:shadow-md transition-all duration-300 group cursor-default">
+                    <div className="h-14 sm:h-18 w-full flex items-center justify-center">
                       <img 
                         src="https://lh3.googleusercontent.com/d/1IBcG1Fg2fmYoP1rqV9pa6HPigwSAw4vo"
                         alt="Poongsan"
-                        className="max-h-8 max-w-full object-contain filter group-hover:scale-105 transition-all"
+                        className="max-h-12 sm:max-h-14 max-w-full object-contain filter group-hover:scale-105 transition-all duration-300"
                         referrerPolicy="no-referrer"
                       />
                     </div>
-                    <span className="block text-[10px] font-extrabold text-gray-850 tracking-tight mt-2 leading-none whitespace-nowrap">풍산</span>
-                    <span className="block text-[8px] text-gray-400 font-mono scale-90 mt-0.5 whitespace-nowrap">Poongsan</span>
+                    <span className="block text-xs sm:text-[13px] font-extrabold text-gray-850 tracking-tight mt-3 leading-none whitespace-nowrap">
+                      {language === "ko" ? "풍산" : "풍산"}
+                    </span>
+                    <span className="block text-[9px] sm:text-[10px] text-gray-400 font-mono scale-90 mt-1 whitespace-nowrap font-medium">Poongsan</span>
                   </div>
 
                   {/* 삼양화학 */}
-                  <div className="p-2 bg-gray-50/55 border border-gray-150 rounded-xl flex flex-col items-center justify-center text-center hover:border-kraft-550 hover:bg-white transition-all group cursor-default shadow-3xs">
-                    <div className="h-10 w-full flex items-center justify-center">
+                  <div className="p-4 bg-white border border-gray-200 hover:border-kraft-500 rounded-2xl flex flex-col items-center justify-center text-center hover:bg-neutral-50/50 hover:shadow-md transition-all duration-300 group cursor-default">
+                    <div className="h-14 sm:h-18 w-full flex items-center justify-center">
                       <img 
                         src="https://lh3.googleusercontent.com/d/1LiuhnDf3UFNy3gik9GlhOxUWAn1ybVhj"
                         alt="Samyang Chemical"
-                        className="max-h-8 max-w-full object-contain filter group-hover:scale-105 transition-all"
+                        className="max-h-12 sm:max-h-14 max-w-full object-contain filter group-hover:scale-105 transition-all duration-300"
                         referrerPolicy="no-referrer"
                       />
                     </div>
-                    <span className="block text-[10px] font-extrabold text-gray-850 tracking-tight mt-2 leading-none whitespace-nowrap">삼양화학</span>
-                    <span className="block text-[8px] text-gray-400 font-mono scale-90 mt-0.5 whitespace-nowrap">Samyang</span>
+                    <span className="block text-xs sm:text-[13px] font-extrabold text-gray-850 tracking-tight mt-3 leading-none whitespace-nowrap">
+                      {language === "ko" ? "삼양화학" : "삼양화학"}
+                    </span>
+                    <span className="block text-[9px] sm:text-[10px] text-gray-400 font-mono scale-90 mt-1 whitespace-nowrap font-medium">Samyang</span>
                   </div>
 
                   {/* LIG넥스원 */}
-                  <div className="p-2 bg-gray-50/55 border border-gray-150 rounded-xl flex flex-col items-center justify-center text-center hover:border-kraft-550 hover:bg-white transition-all group cursor-default shadow-3xs">
-                    <div className="h-10 w-full flex items-center justify-center">
+                  <div className="p-4 bg-white border border-gray-200 hover:border-kraft-500 rounded-2xl flex flex-col items-center justify-center text-center hover:bg-neutral-50/50 hover:shadow-md transition-all duration-300 group cursor-default">
+                    <div className="h-14 sm:h-18 w-full flex items-center justify-center">
                       <img 
                         src="https://lh3.googleusercontent.com/d/1-4Y0wX-5omGAIOH_Ih5pfVtGLIwdOxUm"
                         alt="LIG Nex1"
-                        className="max-h-8 max-w-full object-contain filter group-hover:scale-105 transition-all"
+                        className="max-h-12 sm:max-h-14 max-w-full object-contain filter group-hover:scale-105 transition-all duration-300"
                         referrerPolicy="no-referrer"
                       />
                     </div>
-                    <span className="block text-[10px] font-extrabold text-gray-850 tracking-tight mt-2 leading-none whitespace-nowrap">LIG넥스원</span>
-                    <span className="block text-[8px] text-gray-400 font-mono scale-90 mt-0.5 whitespace-nowrap">LIG Nex1</span>
+                    <span className="block text-xs sm:text-[13px] font-extrabold text-gray-850 tracking-tight mt-3 leading-none whitespace-nowrap">
+                      {language === "ko" ? "LIG넥스원" : "LIG넥스원"}
+                    </span>
+                    <span className="block text-[9px] sm:text-[10px] text-gray-400 font-mono scale-90 mt-1 whitespace-nowrap font-medium">LIG Nex1</span>
                   </div>
                 </div>
               </div>
@@ -595,62 +624,129 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
           <div className="space-y-12">
             
             {/* Top row: Text info & description */}
-            <div className="max-w-4xl space-y-6 text-left">
-              <span className="text-xs font-mono font-bold text-kraft-700 tracking-widest uppercase bg-kraft-100 px-3 py-1 rounded-full">
-                INDUSTRIAL PAPER TUBE
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-tight">
+            <div className="max-w-4xl space-y-4 text-left">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-6 bg-kraft-520 rounded-full" />
+                <span className="text-xs font-mono font-bold text-kraft-700 tracking-widest uppercase bg-kraft-50/80 border border-kraft-100 px-3 py-1 rounded-md">
+                  INDUSTRIAL PAPER TUBE
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3.5xl font-black text-gray-950 tracking-tight leading-tight">
                 {t.home.industrialTitle}
               </h2>
-              <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
+              <p className="text-gray-650 text-sm sm:text-[15px] leading-relaxed font-light">
                 {t.home.industrialDesc}
               </p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs bg-gray-50/70 p-5 rounded-2xl border border-gray-150">
-                <div className="flex items-start gap-2.5 text-gray-700">
-                  <CheckCircle2 className="w-4 h-4 text-kraft-600 shrink-0 mt-0.5" />
+            </div>
+            
+            {/* 3-Column Premium Bento Spec Cards (Full width for maximum screen usage) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+              {/* Card 1: Small Cores */}
+              <div 
+                className="group relative bg-gradient-to-br from-neutral-50 to-neutral-100/40 p-6 sm:p-7 rounded-2xl border border-gray-200/80 hover:border-kraft-300 hover:bg-white hover:shadow-lg transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 cursor-pointer"
+                onClick={() => onTabChange("industrial")}
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-bold text-kraft-700 tracking-widest uppercase bg-kraft-100 px-2.5 py-1 rounded-md">
+                      01 / PRECISION
+                    </span>
+                    <div className="p-2 bg-kraft-50 text-kraft-600 group-hover:bg-military-900 group-hover:text-kraft-350 rounded-xl transition-colors duration-300">
+                      <Settings className="w-4.5 h-4.5 shrink-0" />
+                    </div>
+                  </div>
                   <div>
-                    <strong className="block text-gray-950 mb-0.5 text-xs sm:text-sm">
+                    <h3 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
                       {t.home.indCat1}
-                    </strong>
-                    <span className="text-gray-550 font-light text-[11px] leading-relaxed">
-                      {t.home.indCat1Desc}
+                    </h3>
+                    <span className="inline-block mt-1.5 text-[10px] font-mono font-extrabold text-kraft-700 bg-kraft-50 border border-kraft-100 px-2 py-0.5 rounded">
+                      내경/Inner Ø10 ~ Ø50mm • T 1 ~ 5mm
                     </span>
                   </div>
+                  <p className="text-xs sm:text-sm text-gray-500 font-light leading-relaxed">
+                    {t.home.indCat1Desc}
+                  </p>
                 </div>
-                <div className="flex items-start gap-2.5 text-gray-700">
-                  <CheckCircle2 className="w-4 h-4 text-kraft-600 shrink-0 mt-0.5" />
-                  <div>
-                    <strong className="block text-gray-950 mb-0.5 text-xs sm:text-sm">
-                      {t.home.indCat2}
-                    </strong>
-                    <span className="text-gray-550 font-light text-[11px] leading-relaxed">
-                      {t.home.indCat2Desc}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2.5 text-gray-700">
-                  <CheckCircle2 className="w-4 h-4 text-kraft-600 shrink-0 mt-0.5" />
-                  <div>
-                    <strong className="block text-gray-950 mb-0.5 text-xs sm:text-sm">
-                      {t.home.indCat3}
-                    </strong>
-                    <span className="text-gray-550 font-light text-[11px] leading-relaxed">
-                      {t.home.indCat3Desc}
-                    </span>
-                  </div>
+                <div className="pt-4 mt-6 border-t border-gray-150 flex items-center justify-between text-xs text-kraft-700 font-bold group-hover:text-gray-950 duration-200">
+                  <span>{language === "ko" ? "사양 가이드 보기" : language === "tr" ? "Teknik Detaylar" : "Specs Guide"}</span>
+                  <ArrowRight className="w-4 h-4 translate-x-0 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
 
-              <div className="pt-2">
-                <button
-                  onClick={() => onTabChange("industrial")}
-                  className="py-2.5 px-5 rounded-lg border border-kraft-500 bg-kraft-50 hover:bg-kraft-100 text-kraft-900 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-3xs"
-                >
-                  {t.home.moreIndBtn}
-                  <ChevronRight className="w-4 h-4 text-kraft-700" />
-                </button>
+              {/* Card 2: Medium Cores */}
+              <div 
+                className="group relative bg-gradient-to-br from-neutral-50 to-neutral-100/40 p-6 sm:p-7 rounded-2xl border border-gray-200/80 hover:border-kraft-300 hover:bg-white hover:shadow-lg transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 cursor-pointer"
+                onClick={() => onTabChange("industrial")}
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-bold text-kraft-700 tracking-widest uppercase bg-kraft-100 px-2.5 py-1 rounded-md">
+                      02 / STANDARD
+                    </span>
+                    <div className="p-2 bg-kraft-50 text-kraft-600 group-hover:bg-military-900 group-hover:text-kraft-350 rounded-xl transition-colors duration-300">
+                      <Layers className="w-4.5 h-4.5 shrink-0" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
+                      {t.home.indCat2}
+                    </h3>
+                    <span className="inline-block mt-1.5 text-[10px] font-mono font-extrabold text-kraft-700 bg-kraft-50 border border-kraft-100 px-2 py-0.5 rounded">
+                      내경/Inner Ø50 ~ Ø150mm • T 3 ~ 10mm
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-gray-500 font-light leading-relaxed">
+                    {t.home.indCat2Desc}
+                  </p>
+                </div>
+                <div className="pt-4 mt-6 border-t border-gray-150 flex items-center justify-between text-xs text-kraft-700 font-bold group-hover:text-gray-950 duration-200">
+                  <span>{language === "ko" ? "사양 가이드 보기" : language === "tr" ? "Teknik Detaylar" : "Specs Guide"}</span>
+                  <ArrowRight className="w-4 h-4 translate-x-0 group-hover:translate-x-1 transition-transform" />
+                </div>
               </div>
+
+              {/* Card 3: Large Cores */}
+              <div 
+                className="group relative bg-gradient-to-br from-neutral-50 to-neutral-100/40 p-6 sm:p-7 rounded-2xl border border-gray-200/80 hover:border-kraft-300 hover:bg-white hover:shadow-lg transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 cursor-pointer"
+                onClick={() => onTabChange("industrial")}
+              >
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-bold text-kraft-700 tracking-widest uppercase bg-kraft-100 px-2.5 py-1 rounded-md">
+                      03 / HEAVY DUTY
+                    </span>
+                    <div className="p-2 bg-kraft-50 text-kraft-600 group-hover:bg-military-900 group-hover:text-kraft-350 rounded-xl transition-colors duration-300">
+                      <ShieldCheck className="w-4.5 h-4.5 shrink-0" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">
+                      {t.home.indCat3}
+                    </h3>
+                    <span className="inline-block mt-1.5 text-[10px] font-mono font-extrabold text-kraft-700 bg-kraft-50 border border-kraft-100 px-2 py-0.5 rounded">
+                      내경/Inner Ø150 ~ Ø500mm • T 5 ~ 25mm
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-gray-500 font-light leading-relaxed">
+                    {t.home.indCat3Desc}
+                  </p>
+                </div>
+                <div className="pt-4 mt-6 border-t border-gray-150 flex items-center justify-between text-xs text-kraft-700 font-bold group-hover:text-gray-950 duration-200">
+                  <span>{language === "ko" ? "사양 가이드 보기" : language === "tr" ? "Teknik Detaylar" : "Specs Guide"}</span>
+                  <ArrowRight className="w-4 h-4 translate-x-0 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </div>
+
+            {/* Action button matching group style */}
+            <div className="pt-2 text-left">
+              <button
+                onClick={() => onTabChange("industrial")}
+                className="group relative inline-flex items-center gap-2 py-3 px-6 rounded-xl border border-kraft-500 bg-kraft-50 hover:bg-kraft-100 hover:border-kraft-600 text-kraft-900 text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer shadow-3xs hover:shadow active:scale-98"
+              >
+                {t.home.moreIndBtn}
+                <ChevronRight className="w-4 h-4 text-kraft-700 group-hover:translate-x-1 transition-transform" />
+              </button>
             </div>
 
             {/* Bottom Row: Large wide horizontal image cards */}
