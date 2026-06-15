@@ -6,8 +6,14 @@
 import React from "react";
 import { ChevronUp, Phone, Printer, Mail, MapPin } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
+import { trackCTAClick, trackContactClick } from "../lib/ga4";
 
-export default function Footer() {
+interface FooterProps {
+  onTabChange: (tab: string) => void;
+  onOpenCookieSettings: () => void;
+}
+
+export default function Footer({ onTabChange, onOpenCookieSettings }: FooterProps) {
   const { language, t } = useLanguage();
 
   const scrollToTop = () => {
@@ -15,6 +21,18 @@ export default function Footer() {
       top: 0,
       behavior: "smooth"
     });
+  };
+
+  const handleLegalClick = (tab: "privacy" | "terms") => {
+    const btnName = tab === "privacy" ? "개인정보처리방침" : "이용약관";
+    trackCTAClick(btnName, "footer", `/footer`, language);
+    onTabChange(tab);
+    window.scrollTo(0, 0);
+  };
+
+  const handleCookieClick = () => {
+    trackCTAClick("쿠키 설정", "footer", `/footer`, language);
+    onOpenCookieSettings();
   };
 
   return (
@@ -66,7 +84,13 @@ export default function Footer() {
               {t.footer.directions}
             </span>
             <ul className="space-y-2 text-xs text-gray-400 font-light">
-              <li className="flex items-center gap-2">
+              <li 
+                className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors"
+                onClick={() => {
+                  trackContactClick("phone", "/footer", language);
+                  trackCTAClick("전화 문의", "footer_tel", "/footer", language);
+                }}
+              >
                 <Phone className="w-3.5 h-3.5 text-kraft-500 shrink-0" />
                 <span>{t.footer.telLabel}</span>
               </li>
@@ -74,11 +98,23 @@ export default function Footer() {
                 <Printer className="w-3.5 h-3.5 text-kraft-500 shrink-0" />
                 <span>{t.footer.faxLabel}</span>
               </li>
-              <li className="flex items-center gap-2">
+              <li 
+                className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors"
+                onClick={() => {
+                  trackContactClick("email", "/footer", language);
+                  trackCTAClick("이메일 문의", "footer_email", "/footer", language);
+                }}
+              >
                 <Mail className="w-3.5 h-3.5 text-kraft-500 shrink-0" />
                 <span>swpaper@hanmail.net</span>
               </li>
-              <li className="flex items-start gap-2 leading-relaxed">
+              <li 
+                className="flex items-start gap-2 leading-relaxed cursor-pointer hover:text-white transition-colors"
+                onClick={() => {
+                  trackContactClick("map", "/footer", language);
+                  trackCTAClick("오시는 길", "footer_map", "/footer", language);
+                }}
+              >
                 <MapPin className="w-3.5 h-3.5 text-kraft-500 shrink-0 mt-0.5" />
                 <span>
                   {t.footer.hqAddress}
@@ -101,8 +137,33 @@ export default function Footer() {
 
         </div>
 
+        {/* Middle Legal disclosure and Cookies Link Bar (MANDATORY) */}
+        <div className="pt-6 pb-4 flex flex-wrap gap-x-6 gap-y-2 text-[11.5px] border-t border-military-850 justify-start items-center text-gray-400">
+          <button
+            onClick={() => handleLegalClick("privacy")}
+            className="hover:text-kraft-400 font-bold cursor-pointer transition-colors"
+          >
+            {language === "ko" ? "개인정보처리방침" : language === "tr" ? "Gizlilik Politikası" : "Privacy Policy"}
+          </button>
+          <span className="text-military-800">|</span>
+          <button
+            onClick={() => handleLegalClick("terms")}
+            className="hover:text-kraft-400 font-bold cursor-pointer transition-colors"
+          >
+            {language === "ko" ? "이용약관" : language === "tr" ? "Kullanım Şartları" : "Terms of Service"}
+          </button>
+          <span className="text-military-800">|</span>
+          <button
+            onClick={handleCookieClick}
+            className="hover:text-kraft-400 font-black cursor-pointer transition-colors flex items-center gap-1.5 text-kraft-400 bg-white/5 px-2 py-0.5 rounded-md border border-white/10"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-kraft-500 animate-pulse" />
+            {language === "ko" ? "쿠키 설정" : language === "tr" ? "Çerez Ayarları" : "Cookie Settings"}
+          </button>
+        </div>
+
         {/* Lower Legal copyright bar */}
-        <div className="pt-8 border-t border-military-850 flex flex-col sm:flex-row items-center justify-between text-[11px] text-gray-500 gap-4">
+        <div className="pt-4 flex flex-col sm:flex-row items-center justify-between text-[11px] text-gray-500 gap-4">
           <p className="font-light">
             {t.footer.copyright}
           </p>

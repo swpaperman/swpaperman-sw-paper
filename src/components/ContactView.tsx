@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useLanguage } from "../context/LanguageContext";
+import { trackFormStart, trackGenerateLead, trackFormError } from "../lib/ga4";
 import { 
   FileText, 
   Send, 
@@ -98,6 +99,14 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
   const [hasBlueprint, setHasBlueprint] = useState<string>("N");
   const [hasPhotos, setHasPhotos] = useState<string>("N");
   const [comments, setComments] = useState<string>(prefilledSpecs || "");
+  const [formStarted, setFormStarted] = useState<boolean>(false);
+
+  const handleFieldFocus = () => {
+    if (!formStarted) {
+      setFormStarted(true);
+      trackFormStart("견적 및 공급 상담 문의 서식", "/contact", language);
+    }
+  };
 
   // File upload state
   const [attachedFiles, setAttachedFiles] = useState<InquiryFile[]>([]);
@@ -594,6 +603,9 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
       const updatedDb = [newInquiry, ...allInquiries];
       localStorage.setItem("suwon_inquiries_db", JSON.stringify(updatedDb));
       setAllInquiries(updatedDb);
+
+      // DISPATCH GA4 generate_lead ONLY AFTER database storage registers successfully
+      trackGenerateLead("견적 및 공급 상담 문의 서식", classification, productCategory, language, true);
     } catch (quotaError) {
       console.warn("localStorage quota exceeded, saving inquiry after stripping large binary payloads from simulation DB.", quotaError);
       
@@ -616,8 +628,13 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
               ? "Bildirim: Ekli belgelerin toplam boyutu tarayıcı sınırını (5MB) aştığından önizlemeler sıkıştırıldı.\n\nAncak, teklif talebiniz ve teknik ebatlarınız başarıyla kaydedilmiştir."
               : "Notice: The original size of the attached files exceeded the browser's local storage limit (5MB), so temporary preview data has been compressed and omitted. However, the actual inquiry content and file specifications have been successfully registered."
         );
+
+        // DISPATCH GA4 generate_lead ONLY AFTER database storage registers successfully
+        trackGenerateLead("견적 및 공급 상담 문의 서식", classification, productCategory, language, true);
       } catch (innerError) {
         console.error("Failed to save even stripped inquiry", innerError);
+        // DISPATCH GA4 form_error on database insertion failure
+        trackFormError("견적 및 공급 상담 문의 서식", "LOCAL_STORAGE_QUOTA_EXCEEDED", language);
       }
     }
 
@@ -872,6 +889,7 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                       placeholder={t.contactPage.placeCompany}
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
+                      onFocus={handleFieldFocus}
                       className="w-full text-xs sm:text-sm p-2.5 border border-gray-200 rounded-lg focus:ring-1 focus:ring-kraft-500 outline-none"
                     />
                   </div>
@@ -883,6 +901,7 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                       placeholder={t.contactPage.placeContact}
                       value={contactName}
                       onChange={(e) => setContactName(e.target.value)}
+                      onFocus={handleFieldFocus}
                       className="w-full text-xs sm:text-sm p-2.5 border border-gray-200 rounded-lg focus:ring-1 focus:ring-kraft-500 outline-none"
                     />
                   </div>
@@ -897,6 +916,7 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                       placeholder={t.contactPage.placePhone}
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
+                      onFocus={handleFieldFocus}
                       className="w-full text-xs sm:text-sm p-2.5 border border-gray-200 rounded-lg focus:ring-1 focus:ring-kraft-500 outline-none"
                     />
                   </div>
@@ -908,6 +928,7 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                       placeholder={t.contactPage.placeEmail}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      onFocus={handleFieldFocus}
                       className="w-full text-xs sm:text-sm p-2.5 border border-gray-200 rounded-lg focus:ring-1 focus:ring-kraft-500 outline-none"
                     />
                   </div>

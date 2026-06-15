@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useLanguage } from "../context/LanguageContext";
+import { trackNewsView, trackCTAClick } from "../lib/ga4";
 
 const defensePartners = [
   {
@@ -998,7 +999,11 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -15 }}
-                    onClick={() => setSelectedArticle(article)}
+                    onClick={() => {
+                      setSelectedArticle(article);
+                      trackNewsView(article.title, article.category, language);
+                      trackCTAClick("뉴스 상세 브리핑 읽기", "news_list_card", "/news", language);
+                    }}
                     className="bg-white rounded-2xl border border-gray-200/80 hover:border-kraft-500/55 shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between cursor-pointer group text-left relative overflow-hidden h-full"
                   >
                     {/* Cover Image inside Card */}

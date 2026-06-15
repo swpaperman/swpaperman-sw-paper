@@ -5,6 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { translations, TranslationSchema } from "../lib/translations";
+import { trackLanguageChange } from "../lib/ga4";
 
 type LanguageType = "ko" | "en" | "tr";
 
@@ -31,8 +32,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   });
 
   const setLanguage = (lang: LanguageType) => {
+    const previousLang = language;
     setLanguageState(lang);
     localStorage.setItem("suwon_pref_lang", lang);
+    trackLanguageChange(previousLang, lang, window.location.pathname + window.location.search);
   };
 
   // Synchronize html lang tag

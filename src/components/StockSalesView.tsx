@@ -33,6 +33,7 @@ import {
   CheckSquare
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
+import { trackProductView, trackCTAClick } from "../lib/ga4";
 import { getAccessToken, googleSignIn, uploadStockImageToDrive, db } from "../lib/googleWorkspace";
 import { collection, onSnapshot, doc, setDoc, deleteDoc, getDocs } from "firebase/firestore";
 
@@ -410,6 +411,23 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [activeDetailPhotoIndex, setActiveDetailPhotoIndex] = useState(0);
   const [isDragActive, setIsDragActive] = useState(false);
+
+  const handleSelectStock = (s: StockItem) => {
+    setSelectedStock(s);
+    setActiveDetailPhotoIndex(0);
+    const tx = getStockTranslation(s);
+    const nameStr = s.name.toLowerCase();
+    const isMilitary = nameStr.includes("탄약") || nameStr.includes("ammunition") || nameStr.includes("mortar") || nameStr.includes("havan") || s.id === "STK-002";
+    const category = isMilitary ? "60mm_81mm" : "industrial_paper_tube";
+    trackProductView(
+      tx.name,
+      category,
+      s.innerDia ? `ID:${s.innerDia}` : "industrial_stock",
+      language,
+      "/stock"
+    );
+    trackCTAClick("제품 상세보기", "stock_items_list", "/stock", language);
+  };
 
   // Standalone fullscreen lightbox states
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -1162,8 +1180,7 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                   {/* Photo Section */}
                   <div 
                     onClick={() => {
-                      setSelectedStock(s);
-                      setActiveDetailPhotoIndex(0);
+                      handleSelectStock(s);
                     }}
                     className="relative aspect-video w-full overflow-hidden bg-slate-900 cursor-zoom-in flex items-center justify-center select-none"
                   >
@@ -1191,8 +1208,7 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                       </div>
                       <h4 
                         onClick={() => {
-                          setSelectedStock(s);
-                          setActiveDetailPhotoIndex(0);
+                          handleSelectStock(s);
                         }}
                         className="text-[13px] sm:text-sm font-extrabold text-gray-900 line-clamp-1 hover:text-military-600 transition-colors cursor-zoom-in font-normal"
                       >
@@ -1273,8 +1289,7 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                       <td className="py-3 px-4">
                         <button
                           onClick={() => {
-                            setSelectedStock(s);
-                            setActiveDetailPhotoIndex(0);
+                            handleSelectStock(s);
                           }}
                           className="font-extrabold text-gray-900 border-0 bg-transparent p-0 text-left cursor-zoom-in hover:text-military-750 font-normal hover:underline"
                         >
