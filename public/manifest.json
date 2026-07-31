@@ -1,0 +1,29 @@
+{
+  "name": "(주)수원지관산업 | SUWON PAPER CONE & TUBE",
+  "short_name": "수원지관",
+  "description": "60년 전통 방산 및 산업용 지관/지통 전문 제조기업 (주)수원지관산업",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#112217",
+  "theme_color": "#3cae38",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://lh3.googleusercontent.com/d/1Z7FBFivl_l9l4NeCED5ZsecPXDZDpGP3",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://lh3.googleusercontent.com/d/1Z7FBFivl_l9l4NeCED5ZsecPXDZDpGP3",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
