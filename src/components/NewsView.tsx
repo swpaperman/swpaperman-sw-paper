@@ -56,6 +56,13 @@ import {
   getLocalCustomNewsMap,
   getLocalDeletedNewsIds
 } from "../lib/defenseNewsStore";
+import {
+  getLocalizedNews,
+  translateCategory,
+  translateTextFallback,
+  TAB_TRANSLATIONS,
+  CATEGORY_TRANSLATIONS
+} from "../lib/newsTranslator";
 
 const defensePartners = [
   {
@@ -63,6 +70,8 @@ const defensePartners = [
     nameTr: "Hanwha Aerospace",
     nameEn: "Hanwha Aerospace",
     badge: "K-방산 화포/탄약 체계 체계업체",
+    badgeEn: "Artillery & Munitions Prime Contractor",
+    badgeTr: "Topçu ve Mühimmat Ana Yüklenicisi",
     link: "https://www.hanwhaaerospace.co.kr/",
     logo: "https://lh3.googleusercontent.com/d/1q04UKpLEFNpXhY5L49l5usZC7kzHaZX5"
   },
@@ -71,6 +80,8 @@ const defensePartners = [
     nameTr: "Poongsan",
     nameEn: "Poongsan Corp",
     badge: "한국군 탄약 및 포병탄 주도공급",
+    badgeEn: "Primary Supplier of Artillery Munitions",
+    badgeTr: "Ana Topçu ve Ağır Mühimmat Tedarikçisi",
     link: "https://www.poongsan.co.kr/",
     logo: "https://lh3.googleusercontent.com/d/1IBcG1Fg2fmYoP1rqV9pa6HPigwSAw4vo"
   },
@@ -79,6 +90,8 @@ const defensePartners = [
     nameTr: "Samyang Chemical",
     nameEn: "Samyang Chemical",
     badge: "K-방산 특수 화학/연막탄 제조",
+    badgeEn: "Specialized Defense Chemical & Smoke Munitions",
+    badgeTr: "Özel Kimyasal ve Sis Mühimmatı Üreticisi",
     link: "http://www.samyangchem.co.kr/",
     logo: "https://lh3.googleusercontent.com/d/1LiuhnDf3UFNy3gik9GlhOxUWAn1ybVhj"
   },
@@ -87,6 +100,8 @@ const defensePartners = [
     nameTr: "LIG Nex1",
     nameEn: "LIG Nex1",
     badge: "해군/공군 정밀 항공유도무기 선도",
+    badgeEn: "Precision Guided Munitions & Air Defense",
+    badgeTr: "Hassas Güdümlü Mühimmat ve Hava Savunma",
     link: "https://www.lignex1.com/",
     logo: "https://lh3.googleusercontent.com/d/1-4Y0wX-5omGAIOH_Ih5pfVtGLIwdOxUm"
   },
@@ -95,6 +110,8 @@ const defensePartners = [
     nameTr: "MND Korea",
     nameEn: "Ministry of Defense",
     badge: "국방 정책 수립 & 국방규격 통제기관",
+    badgeEn: "Defense Policy & Military Specification Authority",
+    badgeTr: "Savunma Politikası ve Askeri Şartname İdaresi",
     link: "https://www.mnd.go.kr/",
     logo: "https://lh3.googleusercontent.com/d/1TMm1GB-kYqNNI3rTaKo6yLr7wd6NDKwL"
   },
@@ -103,6 +120,8 @@ const defensePartners = [
     nameTr: "DAPA",
     nameEn: "DAPA",
     badge: "방위력개선 및 국방 군수 조달 총괄",
+    badgeEn: "Defense Acquisition & Procurement Administration",
+    badgeTr: "Savunma Tedarik ve Silahlanma Programı İdaresi",
     link: "https://www.dapa.go.kr/",
     logo: "https://lh3.googleusercontent.com/d/1UT5mmcEtz_gh392ncjV3jYIWIEPeBh39"
   },
@@ -111,6 +130,8 @@ const defensePartners = [
     nameTr: "ADD",
     nameEn: "ADD Research",
     badge: "대한민국 국방 과학 핵심 무기 R&D",
+    badgeEn: "National Defense Science Core Weapon R&D",
+    badgeTr: "Milli Savunma Teknolojileri ve Silah Ar-Ge",
     link: "https://www.add.re.kr/",
     logo: "https://lh3.googleusercontent.com/d/1YeEFMNVO4g_Bs1gqDJGGTifgltIHrH8H"
   },
@@ -119,6 +140,8 @@ const defensePartners = [
     nameTr: "KAI Corp",
     nameEn: "Korea Aerospace Industries",
     badge: "KF-21 / FA-50 / 수리온 국산 항공기 우뚝",
+    badgeEn: "KF-21 / FA-50 Aircraft & Aerospace",
+    badgeTr: "KF-21 / FA-50 Havacılık ve Uçak Sanayii",
     link: "https://www.koreaaero.com/",
     logoIcon: "✈️"
   },
@@ -127,6 +150,8 @@ const defensePartners = [
     nameTr: "Hanwha Systems",
     nameEn: "Hanwha Systems",
     badge: "방산 ICT, 에이사(AESA) 레이더 및 전술통신",
+    badgeEn: "Defense ICT, AESA Radars & Tactical Networks",
+    badgeTr: "Savunma Bilişimi, AESA Radar ve Taktik İletişim",
     link: "https://www.hanwhasystems.com/",
     logoIcon: "📡"
   },
@@ -135,6 +160,8 @@ const defensePartners = [
     nameTr: "Hyundai Rotem",
     nameEn: "Hyundai Rotem",
     badge: "K2 흑표 전차 및 지상 기동장비 원조",
+    badgeEn: "K2 Black Panther Main Battle Tank & Armored Systems",
+    badgeTr: "K2 Kara Panter Tankı ve Zırhlı Muharebe Sistemleri",
     link: "https://www.hyundai-rotem.co.kr/",
     logoIcon: "⚙️"
   },
@@ -143,6 +170,8 @@ const defensePartners = [
     nameTr: "Victek",
     nameEn: "Victek Co.",
     badge: "방산 전자전 시스템 & 피아식별 군인프라",
+    badgeEn: "Electronic Warfare & IFF Tactical Systems",
+    badgeTr: "Elektronik Harp ve IFF Askeri Sistemleri",
     link: "https://www.victek.co.kr/",
     logoIcon: "⚡"
   },
@@ -151,6 +180,8 @@ const defensePartners = [
     nameTr: "Kia Military Veh.",
     nameEn: "Kia Military Vehicles",
     badge: "한국형 소형전술차(KLTV) & 군용 트럭 명가",
+    badgeEn: "Light Tactical Vehicles (KLTV) & Military Transports",
+    badgeTr: "Hafif Taktik Araçlar (KLTV) ve Askeri Kamyonlar",
     link: "https://military.kia.com",
     logoIcon: "🚚"
   }
@@ -399,18 +430,39 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
   
-  // Register Form Fields
+  // Register Form Fields (Multi-Language Supported: KO, EN, TR)
   const [formTab, setFormTab] = useState<"suwon" | "domestic" | "global">("suwon");
   const [formCategory, setFormCategory] = useState("수원지관 소식");
+  const [formCategoryEn, setFormCategoryEn] = useState("Suwon Paper News");
+  const [formCategoryTr, setFormCategoryTr] = useState("Suwon Kağıt Haberleri");
+  
+  // Korean fields
   const [formTitle, setFormTitle] = useState("");
   const [formSummary, setFormSummary] = useState("");
+  const [formCore, setFormCore] = useState("");
+  const [formBody, setFormBody] = useState("");
+  const [formPerspective, setFormPerspective] = useState("탄약 생산과 공급이 확대될수록 탄약의 보관, 수송, 취급 과정에서 포장재의 역할은 더욱 중요해집니다. 탄약 포장용 지환통은 단순 포장재가 아니라 탄약의 장기 저장성과 운송 안정성을 보완하는 기능성 보호 용기입니다.");
+
+  // English fields
+  const [formTitleEn, setFormTitleEn] = useState("");
+  const [formSummaryEn, setFormSummaryEn] = useState("");
+  const [formCoreEn, setFormCoreEn] = useState("");
+  const [formBodyEn, setFormBodyEn] = useState("");
+  const [formPerspectiveEn, setFormPerspectiveEn] = useState("As ammunition output surges globally, protective packaging for propellant and shells becomes critical. Suwon Paper's MIL-SPEC canisters guarantee long-term field survivability.");
+
+  // Turkish fields
+  const [formTitleTr, setFormTitleTr] = useState("");
+  const [formSummaryTr, setFormSummaryTr] = useState("");
+  const [formCoreTr, setFormCoreTr] = useState("");
+  const [formBodyTr, setFormBodyTr] = useState("");
+  const [formPerspectiveTr, setFormPerspectiveTr] = useState("Küresel mühimmat üretim ve lojistik talebi arttıkça koruyucu ambalajın rolü kritikleşmektedir. Suwon Paper'ın askeri şartnamelere uygun karton muhafaza kutuları sahada tam koruma sağlar.");
+
+  // Common metadata fields
   const [formSource, setFormSource] = useState("");
   const [formDate, setFormDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [formUrl, setFormUrl] = useState("https://");
   const [formImageUrl, setFormImageUrl] = useState(""); // Image field
-  const [formCore, setFormCore] = useState("");
-  const [formBody, setFormBody] = useState("");
-  const [formPerspective, setFormPerspective] = useState("탄약 생산과 공급이 확대될수록 탄약의 보관, 수송, 취급 과정에서 포장재의 역할은 더욱 중요해집니다. 탄약 포장용 지환통은 단순 포장재가 아니라 탄약의 장기 저장성과 운송 안정성을 보완하는 기능성 보호 용기입니다.");
+  const [formLangTab, setFormLangTab] = useState<"ko" | "en" | "tr">("ko");
 
   const [notification, setNotification] = useState<string | null>(null);
 
@@ -438,7 +490,10 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
   // Switch form category options automatically when formTab changes
   useEffect(() => {
     if (subCategories[formTab]) {
-      setFormCategory(subCategories[formTab][0]);
+      const firstCat = subCategories[formTab][0];
+      setFormCategory(firstCat);
+      setFormCategoryEn(CATEGORY_TRANSLATIONS[firstCat]?.en || firstCat);
+      setFormCategoryTr(CATEGORY_TRANSLATIONS[firstCat]?.tr || firstCat);
     }
   }, [formTab]);
 
@@ -476,10 +531,50 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
     showNotification("안전하게 로그아웃 되었습니다.");
   };
 
+  // Auto-translate Korean form content into English and Turkish
+  const handleAutoTranslateForm = () => {
+    if (!formTitle.trim()) {
+      alert("먼저 한국어 제목을 입력해주세요.");
+      return;
+    }
+    
+    // Auto translate title
+    if (!formTitleEn) setFormTitleEn(translateTextFallback(formTitle, 'en'));
+    if (!formTitleTr) setFormTitleTr(translateTextFallback(formTitle, 'tr'));
+
+    // Auto translate summary
+    if (formSummary) {
+      if (!formSummaryEn) setFormSummaryEn(translateTextFallback(formSummary, 'en'));
+      if (!formSummaryTr) setFormSummaryTr(translateTextFallback(formSummary, 'tr'));
+    }
+
+    // Auto translate core summary
+    if (formCore) {
+      if (!formCoreEn) setFormCoreEn(translateTextFallback(formCore, 'en'));
+      if (!formCoreTr) setFormCoreTr(translateTextFallback(formCore, 'tr'));
+    }
+
+    // Auto translate body
+    if (formBody) {
+      if (!formBodyEn) setFormBodyEn(translateTextFallback(formBody, 'en'));
+      if (!formBodyTr) setFormBodyTr(translateTextFallback(formBody, 'tr'));
+    }
+
+    // Auto translate perspective
+    if (formPerspective) {
+      if (!formPerspectiveEn) setFormPerspectiveEn(translateTextFallback(formPerspective, 'en'));
+      if (!formPerspectiveTr) setFormPerspectiveTr(translateTextFallback(formPerspective, 'tr'));
+    }
+
+    showNotification("한국어 내용을 바탕으로 영어/튀르키예어 초안이 자동 생성되었습니다.");
+  };
+
   const openRegisterNewForm = () => {
     setEditingArticleId(null);
     setFormTab("domestic");
     setFormCategory("방산 정책");
+    setFormCategoryEn("Defense Policy");
+    setFormCategoryTr("Savunma Politikası");
     setFormTitle("");
     setFormSummary("");
     setFormSource("국방 공인 보고서");
@@ -489,6 +584,21 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
     setFormCore("");
     setFormBody("");
     setFormPerspective("탄약 생산과 공급이 확대될수록 탄약의 보관, 수송, 취급 과정에서 포장재의 역할은 더욱 중요해집니다. 탄약지환통은 단순 포장재가 아니라 탄약의 장기 저장성과 운송 안정성을 보완하는 기능성 보호 용기입니다.");
+    
+    // Reset translated fields
+    setFormTitleEn("");
+    setFormSummaryEn("");
+    setFormCoreEn("");
+    setFormBodyEn("");
+    setFormPerspectiveEn("As ammunition output surges globally, protective packaging for propellant and shells becomes critical. Suwon Paper's MIL-SPEC canisters guarantee long-term field survivability.");
+
+    setFormTitleTr("");
+    setFormSummaryTr("");
+    setFormCoreTr("");
+    setFormBodyTr("");
+    setFormPerspectiveTr("Küresel mühimmat üretim ve lojistik talebi arttıkça koruyucu ambalajın rolü kritikleşmektedir. Suwon Paper'ın askeri şartnamelere uygun karton muhafaza kutuları sahada tam koruma sağlar.");
+
+    setFormLangTab("ko");
     setIsFormOpen(true);
   };
 
@@ -497,6 +607,9 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
     setEditingArticleId(article.id);
     setFormTab(article.tab);
     setFormCategory(article.category);
+    setFormCategoryEn(article.categoryEn || CATEGORY_TRANSLATIONS[article.category]?.en || article.category);
+    setFormCategoryTr(article.categoryTr || CATEGORY_TRANSLATIONS[article.category]?.tr || article.category);
+    
     setFormTitle(article.title);
     setFormSummary(article.summary);
     setFormSource(article.source);
@@ -506,6 +619,21 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
     setFormCore(article.coreSummary);
     setFormBody(article.bodyText);
     setFormPerspective(article.perspective);
+
+    // Multi-language values
+    setFormTitleEn(article.titleEn || "");
+    setFormSummaryEn(article.summaryEn || "");
+    setFormCoreEn(article.coreSummaryEn || "");
+    setFormBodyEn(article.bodyTextEn || "");
+    setFormPerspectiveEn(article.perspectiveEn || "");
+
+    setFormTitleTr(article.titleTr || "");
+    setFormSummaryTr(article.summaryTr || "");
+    setFormCoreTr(article.coreSummaryTr || "");
+    setFormBodyTr(article.bodyTextTr || "");
+    setFormPerspectiveTr(article.perspectiveTr || "");
+
+    setFormLangTab("ko");
     setIsFormOpen(true);
   };
 
@@ -539,15 +667,27 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
       id: editingArticleId || `news-custom-${Date.now()}`,
       tab: formTab,
       category: formCategory,
+      categoryEn: formCategoryEn.trim() || CATEGORY_TRANSLATIONS[formCategory]?.en || formCategory,
+      categoryTr: formCategoryTr.trim() || CATEGORY_TRANSLATIONS[formCategory]?.tr || formCategory,
       title: formTitle.trim(),
+      titleEn: formTitleEn.trim() || translateTextFallback(formTitle.trim(), 'en'),
+      titleTr: formTitleTr.trim() || translateTextFallback(formTitle.trim(), 'tr'),
       summary: formSummary.trim(),
+      summaryEn: formSummaryEn.trim() || translateTextFallback(formSummary.trim(), 'en'),
+      summaryTr: formSummaryTr.trim() || translateTextFallback(formSummary.trim(), 'tr'),
       source: formSource.trim(),
       date: formDate,
       url: formUrl.trim(),
       imageUrl: resolvedImageUrl,
       coreSummary: formCore.trim(),
+      coreSummaryEn: formCoreEn.trim() || translateTextFallback(formCore.trim(), 'en'),
+      coreSummaryTr: formCoreTr.trim() || translateTextFallback(formCore.trim(), 'tr'),
       bodyText: formBody.trim(),
+      bodyTextEn: formBodyEn.trim() || translateTextFallback(formBody.trim(), 'en'),
+      bodyTextTr: formBodyTr.trim() || translateTextFallback(formBody.trim(), 'tr'),
       perspective: formPerspective.trim(),
+      perspectiveEn: formPerspectiveEn.trim() || translateTextFallback(formPerspective.trim(), 'en'),
+      perspectiveTr: formPerspectiveTr.trim() || translateTextFallback(formPerspective.trim(), 'tr'),
       isCustom: true,
       updatedAt: new Date().toISOString()
     };
@@ -566,7 +706,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
     });
 
     setIsFormOpen(false);
-    showNotification(editingArticleId ? "기사 및 대표 이미지가 수정 저장되었습니다. (새로고침 후에도 영구 보존)" : "신규 기사가 등록되었습니다. (새로고침 후에도 영구 보존)");
+    showNotification(editingArticleId ? "기사 및 영문/튀르키예어 번역본이 저장되었습니다. (새로고침 후에도 영구 보존)" : "신규 기사가 번역본과 함께 등록되었습니다. (새로고침 후에도 영구 보존)");
   };
 
   // Reset Articles to default
@@ -578,6 +718,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
       showNotification("기본 팩트 데이터로 복구되었습니다.");
     }
   };
+
   const filteredArticles = articles.filter(art => {
     // 1. Tab filter
     if (activeTabFilter !== "all" && art.tab !== activeTabFilter) return false;
@@ -585,14 +726,14 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
     // 2. Sub Category filter
     if (selectedSubCategory !== "all" && art.category !== selectedSubCategory) return false;
 
-    // 3. Search query
+    // 3. Search query (multi-lingual match)
     if (searchQuery.trim() !== "") {
       const q = searchQuery.toLowerCase();
-      const matchTitle = art.title.toLowerCase().includes(q);
-      const matchSummary = art.summary.toLowerCase().includes(q);
-      const matchBody = art.bodyText.toLowerCase().includes(q);
-      const matchCategory = art.category.toLowerCase().includes(q);
-      const matchPerspective = art.perspective.toLowerCase().includes(q);
+      const matchTitle = (art.title + " " + (art.titleEn || "") + " " + (art.titleTr || "")).toLowerCase().includes(q);
+      const matchSummary = (art.summary + " " + (art.summaryEn || "") + " " + (art.summaryTr || "")).toLowerCase().includes(q);
+      const matchBody = (art.bodyText + " " + (art.bodyTextEn || "") + " " + (art.bodyTextTr || "")).toLowerCase().includes(q);
+      const matchCategory = (art.category + " " + (art.categoryEn || "") + " " + (art.categoryTr || "")).toLowerCase().includes(q);
+      const matchPerspective = (art.perspective + " " + (art.perspectiveEn || "") + " " + (art.perspectiveTr || "")).toLowerCase().includes(q);
       return matchTitle || matchSummary || matchBody || matchCategory || matchPerspective;
     }
 
@@ -877,6 +1018,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
           <div className="animate-marquee gap-4 flex shrink-0">
             {[...defensePartners, ...defensePartners, ...defensePartners].map((partner, idx) => {
               const displayName = language === "ko" ? partner.name : language === "tr" ? partner.nameTr : partner.nameEn;
+              const displayBadge = language === "ko" ? partner.badge : language === "tr" ? (partner.badgeTr || partner.badge) : (partner.badgeEn || partner.badge);
               return (
                 <a
                   key={idx}
@@ -905,7 +1047,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                         {displayName}
                       </span>
                       <span className="block text-[9px] text-gray-400 mt-0.5 font-light truncate">
-                        {partner.badge}
+                        {displayBadge}
                       </span>
                     </div>
                   </div>
@@ -934,7 +1076,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                     : "text-gray-600 hover:bg-gray-200"
                 }`}
               >
-                {language === "ko" ? "전체 보기" : "Show All"}
+                {language === "ko" ? "전체 보기" : language === "tr" ? "Tümünü Göster" : "Show All"}
               </button>
               <button
                 onClick={() => {
@@ -948,7 +1090,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                 }`}
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-kraft-500 animate-pulse" />
-                {language === "ko" ? "수원지관 소식" : "Suwon Paper News"}
+                {language === "ko" ? "수원지관 소식" : language === "tr" ? "Suwon Kağıt Haberleri" : "Suwon Paper News"}
               </button>
               <button
                 onClick={() => {
@@ -962,7 +1104,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                 }`}
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                {language === "ko" ? "국내 K-방산" : "Domestic K-Defense"}
+                {language === "ko" ? "국내 K-방산" : language === "tr" ? "Yerli K-Savunma" : "Domestic K-Defense"}
               </button>
               <button
                 onClick={() => {
@@ -976,7 +1118,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                 }`}
               >
                 <Globe className="w-3.5 h-3.5 text-orange-500 animate-spin-slow" />
-                {language === "ko" ? "해외 방산 동향" : "Global Defense Trends"}
+                {language === "ko" ? "해외 방산 동향" : language === "tr" ? "Küresel Savunma Trendleri" : "Global Defense Trends"}
               </button>
             </div>
 
@@ -992,7 +1134,9 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                 placeholder={
                   language === "ko"
                     ? "방산, 탄약, 군수품 포장, 보관 수색..."
-                    : "Search military keywords..."
+                    : language === "tr"
+                      ? "Savunma, mühimmat, askeri ambalaj ara..."
+                      : "Search defense, ammunition, MIL-SPEC packaging..."
                 }
                 className="w-full bg-gray-50 border border-gray-300 focus:border-military-600 text-sm py-2 px-10 rounded-xl focus:outline-none transition-all placeholder:text-gray-400"
               />
@@ -1011,7 +1155,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
           {(activeTabFilter === "suwon" || activeTabFilter === "domestic" || activeTabFilter === "global") && (
             <div className="flex flex-wrap items-center gap-1.5 mt-4 pt-4 border-t border-gray-100">
               <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mr-2 flex items-center gap-1">
-                <Sliders className="w-3 h-3" /> 세부 카테고리:
+                <Sliders className="w-3 h-3" /> {language === "ko" ? "세부 카테고리:" : language === "tr" ? "Alt Kategoriler:" : "Subcategories:"}
               </span>
               <button
                 onClick={() => setSelectedSubCategory("all")}
@@ -1021,21 +1165,24 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                     : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
                 }`}
               >
-                전체
+                {language === "ko" ? "전체" : language === "tr" ? "Tümü" : "All"}
               </button>
-              {subCategories[activeTabFilter].map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedSubCategory(cat)}
-                  className={`py-1 px-3 rounded-full text-xs font-medium border transition-all cursor-pointer ${
-                    selectedSubCategory === cat
-                      ? "bg-military-50 text-military-800 border-military-300 font-extrabold"
-                      : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+              {subCategories[activeTabFilter].map((cat) => {
+                const displayCategory = translateCategory(cat, language);
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedSubCategory(cat)}
+                    className={`py-1 px-3 rounded-full text-xs font-medium border transition-all cursor-pointer ${
+                      selectedSubCategory === cat
+                        ? "bg-military-50 text-military-800 border-military-300 font-extrabold"
+                        : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    {displayCategory}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -1047,9 +1194,15 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
         {filteredArticles.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-200 p-16 text-center shadow-xs flex flex-col justify-center items-center max-w-xl mx-auto space-y-4">
             <HelpCircle className="w-12 h-12 text-gray-400" />
-            <h3 className="text-lg font-bold text-gray-800">검색 필터 결과가 존재하지 않습니다</h3>
+            <h3 className="text-lg font-bold text-gray-800">
+              {language === "ko" ? "검색 필터 결과가 존재하지 않습니다" : language === "tr" ? "Eşleşen savunma raporu bulunamadı" : "No matching defense reports found"}
+            </h3>
             <p className="text-xs text-gray-500 font-light leading-relaxed max-w-sm">
-              인텔리전스 DB에 등록된 뉴스가 없거나 매칭 키워드가 부합하지 않습니다. 검색어를 간소화하거나 상단 헤더 관리자 시뮬레이터를 이용하여 기사를 추가해보세요.
+              {language === "ko" 
+                ? "인텔리전스 DB에 등록된 뉴스가 없거나 매칭 키워드가 부합하지 않습니다. 검색어를 간소화하거나 상단 헤더 관리자 시뮬레이터를 이용하여 기사를 추가해보세요."
+                : language === "tr"
+                  ? "İstihbarat veri tabanında eşleşen haber/rapor bulunamadı. Filtreleri sıfırlamayı veya yeni haber eklemeyi deneyin."
+                  : "No reports found in the intelligence database or keywords did not match. Try clearing filters or creating new items."}
             </p>
             <button
               onClick={() => {
@@ -1059,7 +1212,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
               }}
               className="py-2 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-bold text-gray-800 transition-all border-0 cursor-pointer"
             >
-              전체 필터 초기화
+              {language === "ko" ? "전체 필터 초기화" : language === "tr" ? "Tüm Filtreleri Sıfırla" : "Reset All Filters"}
             </button>
           </div>
         ) : (
@@ -1067,6 +1220,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
             <AnimatePresence mode="popLayout">
               {filteredArticles.map((article) => {
                 const isDomestic = article.tab === "domestic";
+                const loc = getLocalizedNews(article, language);
                 
                 return (
                   <motion.div
@@ -1077,7 +1231,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                     exit={{ opacity: 0, y: -15 }}
                     onClick={() => {
                       setSelectedArticle(article);
-                      trackNewsView(article.title, article.category, language);
+                      trackNewsView(loc.title, loc.category, language);
                       trackCTAClick("뉴스 상세 브리핑 읽기", "news_list_card", "/news", language);
                     }}
                     className="bg-white rounded-2xl border border-gray-200/80 hover:border-kraft-500/55 shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between cursor-pointer group text-left relative overflow-hidden h-full"
@@ -1087,7 +1241,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                       <div className="h-48 w-full overflow-hidden relative bg-gray-150 shrink-0">
                         <img 
                           src={article.imageUrl} 
-                          alt={article.title}
+                          alt={loc.title}
                           className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
                           referrerPolicy="no-referrer"
                         />
@@ -1104,7 +1258,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
 
                     {/* Content Area */}
                     <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                      {/* Visual accents for selected tabs (now inside content area for cleaner alignment) */}
+                      {/* Visual accents for selected tabs */}
                       <div className="space-y-4 relative">
                         <div className={`absolute -left-6 top-1.5 w-1 h-6 rounded-r ${
                           isDomestic ? "bg-blue-500" : "bg-orange-500"
@@ -1112,12 +1266,12 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
 
                         {/* Meta header */}
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className={`text-[10px] font-bold px-2 px-2.5 py-0.5 rounded-md uppercase tracking-wider ${
+                          <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider ${
                             isDomestic 
                               ? "bg-blue-50 text-blue-700 border border-blue-100" 
                               : "bg-orange-50 text-orange-700 border border-orange-100"
                           }`}>
-                            {article.category}
+                            {loc.category}
                           </span>
                           
                           <div className="flex items-center gap-3 text-[11px] text-gray-400 font-mono">
@@ -1133,10 +1287,10 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                         {/* Title & Summary */}
                         <div className="space-y-2">
                           <h3 className="text-base sm:text-[17px] font-black leading-snug text-gray-900 group-hover:text-military-800 transition-colors">
-                            {article.title}
+                            {loc.title}
                           </h3>
                           <p className="text-xs sm:text-sm text-gray-500 leading-relaxed font-light line-clamp-3">
-                            {article.summary}
+                            {loc.summary}
                           </p>
                         </div>
 
@@ -1144,10 +1298,10 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                         <div className="bg-military-50/50 p-3 rounded-lg border border-military-100 mt-2">
                           <div className="flex items-center gap-1.5 text-[11px] font-extrabold text-military-800 uppercase tracking-wider mb-1.5">
                             <Sparkles className="w-3.5 h-3.5 text-kraft-600 animate-pulse" />
-                            <span>수원 제조 관점 핵심</span>
+                            <span>{language === "ko" ? "수원 제조 관점 핵심" : language === "tr" ? "Suwon Üretim Perspektifi" : "Suwon Mfg Perspective"}</span>
                           </div>
                           <p className="text-[11.5px] text-gray-600 leading-relaxed font-medium line-clamp-2 italic">
-                            "{article.perspective}"
+                            "{loc.perspective}"
                           </p>
                         </div>
                       </div>
@@ -1160,23 +1314,23 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                               <button
                                 onClick={(e) => openEditForm(article, e)}
                                 className="p-1 px-2 text-[10.5px] rounded bg-gray-100 hover:bg-gray-200 hover:text-military-800 text-gray-600 font-bold border-0 cursor-pointer flex items-center gap-1"
-                                title="기사 수정"
+                                title={language === "ko" ? "기사 수정" : language === "tr" ? "Haberi Düzenle" : "Edit Article"}
                               >
-                                <Edit className="w-3 h-3" /> 수정
+                                <Edit className="w-3 h-3" /> {language === "ko" ? "수정" : language === "tr" ? "Düzenle" : "Edit"}
                               </button>
                               <button
                                 onClick={(e) => handleDelete(article.id, e)}
                                 className="p-1 px-2 text-[10.5px] rounded bg-red-50 hover:bg-red-100 text-red-600 font-bold border-0 cursor-pointer flex items-center gap-1"
-                                title="기사 삭제"
+                                title={language === "ko" ? "기사 삭제" : language === "tr" ? "Haberi Sil" : "Delete Article"}
                               >
-                                <Trash2 className="w-3 h-3" /> 삭제
+                                <Trash2 className="w-3 h-3" /> {language === "ko" ? "삭제" : language === "tr" ? "Sil" : "Delete"}
                               </button>
                             </div>
                           )}
                         </div>
 
                         <div className="flex items-center gap-1.5 font-bold text-xs text-military-800 group-hover:text-kraft-600 transition-colors">
-                          <span>상세 브리핑 읽기</span>
+                          <span>{language === "ko" ? "상세 브리핑 읽기" : language === "tr" ? "Ayrıntılı Raporu Oku" : "Read Detailed Briefing"}</span>
                           <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                         </div>
                       </div>
@@ -1191,157 +1345,160 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
 
       {/* 4. DETAILS MODAL (Populates all sub-items clearly) */}
       <AnimatePresence>
-        {selectedArticle && (
-          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
-            {/* Backdrop cover */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedArticle(null)}
-              className="fixed inset-0 bg-military-900/80 backdrop-blur-xs"
-            />
+        {selectedArticle && (() => {
+          const modalLoc = getLocalizedNews(selectedArticle, language);
+          return (
+            <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+              {/* Backdrop cover */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedArticle(null)}
+                className="fixed inset-0 bg-military-900/80 backdrop-blur-xs"
+              />
 
-            {/* Modal Body */}
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white text-gray-800 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl relative z-10 border border-military-800/10"
-            >
-              {/* Header Visual Stripe */}
-              <div className={`h-2.5 w-full ${
-                selectedArticle.tab === "domestic" ? "bg-blue-500" : "bg-orange-500"
-              }`} />
+              {/* Modal Body */}
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-white text-gray-800 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl relative z-10 border border-military-800/10"
+              >
+                {/* Header Visual Stripe */}
+                <div className={`h-2.5 w-full ${
+                  selectedArticle.tab === "domestic" ? "bg-blue-500" : "bg-orange-500"
+                }`} />
 
-              <div className="p-6 sm:p-8 space-y-6 text-left">
-                {/* Close Button */}
-                <button
-                  onClick={() => setSelectedArticle(null)}
-                  className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer border-0"
-                  aria-label="닫기"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="p-6 sm:p-8 space-y-6 text-left">
+                  {/* Close Button */}
+                  <button
+                    onClick={() => setSelectedArticle(null)}
+                    className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer border-0"
+                    aria-label="닫기"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
 
-                {/* Subcategory, Source, Date heading block */}
-                <div className="flex flex-wrap items-center gap-3.5 border-b border-gray-100 pb-4">
-                  <span className={`text-[10.5px] font-extrabold px-3 py-0.5 rounded-md uppercase tracking-wider ${
-                    selectedArticle.tab === "domestic" 
-                      ? "bg-blue-50 text-blue-700 border border-blue-150" 
-                      : "bg-orange-50 text-orange-700 border border-orange-150"
-                  }`}>
-                    {selectedArticle.category}
-                  </span>
-
-                  <span className="text-xs text-gray-400 font-mono flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" /> {selectedArticle.date}
-                  </span>
-
-                  <span className="text-xs text-gray-400 font-semibold">• {selectedArticle.source}</span>
-                  
-                  {selectedArticle.url && (
-                    <a
-                      href={selectedArticle.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-kraft-600 hover:text-kraft-700 hover:underline inline-flex items-center gap-1 font-bold ml-auto"
-                    >
-                      <span>원문 원본 링크</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
-                </div>
-
-                {/* Title */}
-                <h2 className="text-xl sm:text-2xl font-black tracking-tight text-gray-900 leading-snug">
-                  {selectedArticle.title}
-                </h2>
-
-                {/* Article Cover Image in Modal */}
-                {selectedArticle.imageUrl && (
-                  <div className="w-full h-64 sm:h-80 overflow-hidden rounded-2xl relative shadow-md bg-gray-100">
-                    <img 
-                      src={selectedArticle.imageUrl} 
-                      alt={selectedArticle.title}
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                    {/* Subtle info label overlays */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
-                    <span className="absolute bottom-4 left-4 text-xs font-mono text-white flex items-center gap-1.5 backdrop-blur-xs bg-black/35 px-3 py-1 rounded-md border border-white/10">
-                      <FileText className="w-3.5 h-3.5 text-kraft-300" />
-                      IMAGE SOURCE: INTEL_DYNAMICS
+                  {/* Subcategory, Source, Date heading block */}
+                  <div className="flex flex-wrap items-center gap-3.5 border-b border-gray-100 pb-4">
+                    <span className={`text-[10.5px] font-extrabold px-3 py-0.5 rounded-md uppercase tracking-wider ${
+                      selectedArticle.tab === "domestic" 
+                        ? "bg-blue-50 text-blue-700 border border-blue-150" 
+                        : "bg-orange-50 text-orange-700 border border-orange-150"
+                    }`}>
+                      {modalLoc.category}
                     </span>
+
+                    <span className="text-xs text-gray-400 font-mono flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" /> {selectedArticle.date}
+                    </span>
+
+                    <span className="text-xs text-gray-400 font-semibold">• {selectedArticle.source}</span>
+                    
+                    {selectedArticle.url && (
+                      <a
+                        href={selectedArticle.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-kraft-600 hover:text-kraft-700 hover:underline inline-flex items-center gap-1 font-bold ml-auto"
+                      >
+                        <span>{language === "ko" ? "원문 원본 링크" : language === "tr" ? "Orijinal Kaynak Bağlantısı" : "Original Source Link"}</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
                   </div>
-                )}
 
-                {/* 핵심 요약 (Core Summary) Bullet box */}
-                <div className="bg-kraft-50/40 border border-kraft-500/20 p-4 rounded-xl">
-                  <div className="flex items-center gap-1.5 text-xs font-black text-kraft-800 uppercase tracking-widest mb-1.5">
-                    <TrendingUp className="w-4 h-4 text-kraft-600" />
-                    <span>핵심 인텔리전스 요약</span>
+                  {/* Title */}
+                  <h2 className="text-xl sm:text-2xl font-black tracking-tight text-gray-900 leading-snug">
+                    {modalLoc.title}
+                  </h2>
+
+                  {/* Article Cover Image in Modal */}
+                  {selectedArticle.imageUrl && (
+                    <div className="w-full h-64 sm:h-80 overflow-hidden rounded-2xl relative shadow-md bg-gray-100">
+                      <img 
+                        src={selectedArticle.imageUrl} 
+                        alt={modalLoc.title}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                      {/* Subtle info label overlays */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+                      <span className="absolute bottom-4 left-4 text-xs font-mono text-white flex items-center gap-1.5 backdrop-blur-xs bg-black/35 px-3 py-1 rounded-md border border-white/10">
+                        <FileText className="w-3.5 h-3.5 text-kraft-300" />
+                        IMAGE SOURCE: INTEL_DYNAMICS
+                      </span>
+                    </div>
+                  )}
+
+                  {/* 핵심 요약 (Core Summary) Bullet box */}
+                  <div className="bg-kraft-50/40 border border-kraft-500/20 p-4 rounded-xl">
+                    <div className="flex items-center gap-1.5 text-xs font-black text-kraft-800 uppercase tracking-widest mb-1.5">
+                      <TrendingUp className="w-4 h-4 text-kraft-600" />
+                      <span>{language === "ko" ? "핵심 인텔리전스 요약" : language === "tr" ? "Temel İstihbarat Özeti" : "Core Intelligence Summary"}</span>
+                    </div>
+                    <p className="text-sm font-semibold text-gray-850 leading-relaxed">
+                      "{modalLoc.coreSummary}"
+                    </p>
                   </div>
-                  <p className="text-sm font-semibold text-gray-850 leading-relaxed">
-                    "{selectedArticle.coreSummary}"
-                  </p>
-                </div>
 
-                {/* 본문 요약 (Body Summary) */}
-                <div className="space-y-3.5">
-                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                    <FileText className="w-3.5 h-3.5" /> 동향 분석 보고서 요약
-                  </h4>
-                  <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line font-light">
-                    {selectedArticle.bodyText}
-                  </p>
-                </div>
-
-                {/* 수원지관산업 제조 관점 (Suwon Packaging Perspective) - HIGHLY HIGHLIGHTED */}
-                <div className="bg-military-920 p-5 rounded-2xl text-white relative overflow-hidden shadow-inner border border-military-800">
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-kraft-500/5 rounded-full blur-xl pointer-events-none" />
-                  
-                  <div className="flex items-center gap-2 text-xs font-black text-kraft-300 uppercase tracking-widest mb-3 border-b border-white/10 pb-2">
-                    <Sparkles className="w-4 h-4 text-kraft-400 animate-pulse" />
-                    <span>수원지관산업 제조·공학적 관점 코멘트</span>
+                  {/* 본문 요약 (Body Summary) */}
+                  <div className="space-y-3.5">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                      <FileText className="w-3.5 h-3.5" /> {language === "ko" ? "동향 분석 보고서 요약" : language === "tr" ? "Savunma Eğilim Raporu Özeti" : "Defense Trend Analysis Report"}
+                    </h4>
+                    <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line font-light">
+                      {modalLoc.bodyText}
+                    </p>
                   </div>
-                  
-                  <p className="text-xs sm:text-sm text-gray-250 leading-relaxed font-normal italic">
-                    "{selectedArticle.perspective}"
-                  </p>
+
+                  {/* 수원지관산업 제조 관점 (Suwon Packaging Perspective) - HIGHLY HIGHLIGHTED */}
+                  <div className="bg-military-920 p-5 rounded-2xl text-white relative overflow-hidden shadow-inner border border-military-800">
+                    <div className="absolute top-0 right-0 w-20 h-20 bg-kraft-500/5 rounded-full blur-xl pointer-events-none" />
+                    
+                    <div className="flex items-center gap-2 text-xs font-black text-kraft-300 uppercase tracking-widest mb-3 border-b border-white/10 pb-2">
+                      <Sparkles className="w-4 h-4 text-kraft-400 animate-pulse" />
+                      <span>{language === "ko" ? "수원지관산업 제조·공학적 관점 코멘트" : language === "tr" ? "Suwon Kağıt Endüstrisi Üretim ve Mühendislik Yorumu" : "Suwon Paper Industry Mfg & Engineering Comment"}</span>
+                    </div>
+                    
+                    <p className="text-xs sm:text-sm text-gray-250 leading-relaxed font-normal italic">
+                      "{modalLoc.perspective}"
+                    </p>
+                  </div>
+
+                  {/* Related Action buttons matching product navigation */}
+                  <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-gray-100">
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider sm:mr-auto">
+                      {language === "ko" ? "관련 규격 연계 대응 서비스" : language === "tr" ? "İlgili Askeri Standart Çözümleri" : "Related MIL-SPEC Packaging Solutions"}
+                    </span>
+
+                    <button
+                      onClick={() => {
+                        setSelectedArticle(null);
+                        // Go directly to the products ammunition tab
+                        onTabChange("ammunition");
+                      }}
+                      className="w-full sm:w-auto py-2.5 px-5 rounded-xl bg-military-800 text-white hover:bg-military-900 transition-all text-xs font-bold cursor-pointer transition-all border-0 shadow-sm"
+                    >
+                      {language === "ko" ? "탄약지환통 사양 보기" : language === "tr" ? "Mühimmat Tüpü Özellikleri" : "View Ammunition Tube Specs"}
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setSelectedArticle(null);
+                        onTabChange("contact");
+                      }}
+                      className="w-full sm:w-auto py-2.5 px-5 rounded-xl bg-kraft-500 text-gray-950 hover:bg-kraft-600 text-xs font-black cursor-pointer transition-all border-0 shadow-sm"
+                    >
+                      {language === "ko" ? "맞춤 규격 상담하기" : language === "tr" ? "Özel Şartname Danışmanlığı" : "Request Custom Spec Consultation"}
+                    </button>
+                  </div>
                 </div>
-
-                {/* Related Action buttons matching product navigation */}
-                <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-gray-100">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider sm:mr-auto">
-                    관련 규격 연계 대응 서비스
-                  </span>
-
-                  <button
-                    onClick={() => {
-                      setSelectedArticle(null);
-                      // Go directly to the products ammunition tab
-                      onTabChange("ammunition");
-                    }}
-                    className="w-full sm:w-auto py-2.5 px-5 rounded-xl bg-military-800 text-white hover:bg-military-900 transition-all text-xs font-bold cursor-pointer transition-all border-0 shadow-sm"
-                  >
-                    탄약지환통 사양 보기
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setSelectedArticle(null);
-                      onTabChange("contact");
-                    }}
-                    className="w-full sm:w-auto py-2.5 px-5 rounded-xl bg-kraft-500 text-gray-950 hover:bg-kraft-600 text-xs font-black cursor-pointer transition-all border-0 shadow-sm"
-                  >
-                    맞춤 규격 상담하기
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
 
       {/* 5. ADMIN MANAGE FORM (Registration of custom contents) */}
@@ -1591,59 +1748,249 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                     </div>
                   </div>
 
-                  {/* Short Summary text */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">카드 노출 요약 (3줄 이내) *</label>
-                    <textarea
-                      value={formSummary}
-                      onChange={(e) => setFormSummary(e.target.value)}
-                      placeholder="카드의 본문 미리보기 구절을 적어주세요."
-                      rows={2}
-                      className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600"
-                      required
-                    />
-                  </div>
+                  {/* Multilingual Content Tabs & Auto-Translation helper */}
+                  <div className="pt-2 border-t border-gray-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
+                        <button
+                          type="button"
+                          onClick={() => setFormLangTab("ko")}
+                          className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            formLangTab === "ko"
+                              ? "bg-military-800 text-white shadow-xs"
+                              : "text-gray-600 hover:bg-gray-200"
+                          }`}
+                        >
+                          🇰🇷 한국어 (기본)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormLangTab("en")}
+                          className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            formLangTab === "en"
+                              ? "bg-military-800 text-white shadow-xs"
+                              : "text-gray-600 hover:bg-gray-200"
+                          }`}
+                        >
+                          🇺🇸 English
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormLangTab("tr")}
+                          className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            formLangTab === "tr"
+                              ? "bg-military-800 text-white shadow-xs"
+                              : "text-gray-600 hover:bg-gray-200"
+                          }`}
+                        >
+                          🇹🇷 Türkçe
+                        </button>
+                      </div>
 
-                  {/* Core summary bullet */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">핵심 인텔리전스 요약 *</label>
-                    <input
-                      type="text"
-                      value={formCore}
-                      onChange={(e) => setFormCore(e.target.value)}
-                      placeholder="보고서의 핵심 가치 요점을 한 문장으로 압축 요약"
-                      className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600"
-                      required
-                    />
-                  </div>
+                      <button
+                        type="button"
+                        onClick={handleAutoTranslateForm}
+                        className="py-1.5 px-3 rounded-lg bg-kraft-50 hover:bg-kraft-100 border border-kraft-400 text-kraft-900 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors self-start sm:self-auto"
+                        title="한국어 내용을 영문 및 튀르키예어로 자동 번역하여 채웁니다"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-kraft-600 animate-pulse" />
+                        <span>✨ 영문/튀르키예어 자동 번역 생성</span>
+                      </button>
+                    </div>
 
-                  {/* Body analysis description */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">상세 분석 설명 본문 *</label>
-                    <textarea
-                      value={formBody}
-                      onChange={(e) => setFormBody(e.target.value)}
-                      placeholder="상세 팝업창에서 보여질 풍부한 동향 보고서 요약 텍스트를 작성해주세요."
-                      rows={4}
-                      className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600"
-                      required
-                    />
-                  </div>
+                    {/* Language Badge */}
+                    <div className="text-[11px] text-gray-500 font-medium mb-3 flex items-center gap-1">
+                      <Globe className="w-3.5 h-3.5 text-kraft-600" />
+                      <span>
+                        현재 편집 언어: <strong>{formLangTab === "ko" ? "한국어 원문" : formLangTab === "en" ? "영어 (English)" : "튀르키예어 (Türkçe)"}</strong>
+                      </span>
+                    </div>
 
-                  {/* Perspective comment */}
-                  <div className="bg-military-50 p-4 rounded-xl border border-military-200">
-                    <label className="block text-xs font-bold text-military-800 uppercase tracking-wider mb-1 flex items-center gap-1">
-                      <Sparkles className="w-3.5 h-3.5 text-kraft-600" />
-                      수원지관산업 제조·공학적 관점 코멘트 (강조 영역) *
-                    </label>
-                    <textarea
-                      value={formPerspective}
-                      onChange={(e) => setFormPerspective(e.target.value)}
-                      placeholder="제품의 탄약 안정성 확보, 방습력 등 제조사의 공학 관점을 덧붙여 기업 신뢰감을 도출하세요."
-                      rows={2.5}
-                      className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-500 bg-white"
-                      required
-                    />
+                    {/* Korean Fields */}
+                    {formLangTab === "ko" && (
+                      <div className="space-y-4">
+                        {/* Short Summary text */}
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">카드 노출 요약 (3줄 이내) *</label>
+                          <textarea
+                            value={formSummary}
+                            onChange={(e) => setFormSummary(e.target.value)}
+                            placeholder="카드의 본문 미리보기 구절을 적어주세요."
+                            rows={2}
+                            className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600"
+                            required
+                          />
+                        </div>
+
+                        {/* Core summary bullet */}
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">핵심 인텔리전스 요약 *</label>
+                          <input
+                            type="text"
+                            value={formCore}
+                            onChange={(e) => setFormCore(e.target.value)}
+                            placeholder="보고서의 핵심 가치 요점을 한 문장으로 압축 요약"
+                            className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600"
+                            required
+                          />
+                        </div>
+
+                        {/* Body analysis description */}
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">상세 분석 설명 본문 *</label>
+                          <textarea
+                            value={formBody}
+                            onChange={(e) => setFormBody(e.target.value)}
+                            placeholder="상세 팝업창에서 보여질 풍부한 동향 보고서 요약 텍스트를 작성해주세요."
+                            rows={4}
+                            className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600"
+                            required
+                          />
+                        </div>
+
+                        {/* Perspective comment */}
+                        <div className="bg-military-50 p-4 rounded-xl border border-military-200">
+                          <label className="block text-xs font-bold text-military-800 uppercase tracking-wider mb-1 flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5 text-kraft-600" />
+                            수원지관산업 제조·공학적 관점 코멘트 (강조 영역) *
+                          </label>
+                          <textarea
+                            value={formPerspective}
+                            onChange={(e) => setFormPerspective(e.target.value)}
+                            placeholder="제품의 탄약 안정성 확보, 방습력 등 제조사의 공학 관점을 덧붙여 기업 신뢰감을 도출하세요."
+                            rows={2.5}
+                            className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-500 bg-white"
+                            required
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* English Fields */}
+                    {formLangTab === "en" && (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">English Title (영문 제목)</label>
+                          <input
+                            type="text"
+                            value={formTitleEn}
+                            onChange={(e) => setFormTitleEn(e.target.value)}
+                            placeholder="K-Defense Global Surge & MIL-SPEC Canister Qualification..."
+                            className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">English Summary (영문 카드 요약)</label>
+                          <textarea
+                            value={formSummaryEn}
+                            onChange={(e) => setFormSummaryEn(e.target.value)}
+                            placeholder="Brief English summary for the article card preview."
+                            rows={2}
+                            className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">English Core Summary (영문 핵심 요약)</label>
+                          <input
+                            type="text"
+                            value={formCoreEn}
+                            onChange={(e) => setFormCoreEn(e.target.value)}
+                            placeholder="One-sentence core intelligence takeaway in English."
+                            className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">English Detailed Report Body (영문 상세 본문)</label>
+                          <textarea
+                            value={formBodyEn}
+                            onChange={(e) => setFormBodyEn(e.target.value)}
+                            placeholder="Detailed English analysis report body text."
+                            rows={4}
+                            className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600"
+                          />
+                        </div>
+
+                        <div className="bg-military-50 p-4 rounded-xl border border-military-200">
+                          <label className="block text-xs font-bold text-military-800 uppercase tracking-wider mb-1 flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5 text-kraft-600" />
+                            Suwon Paper Industry Perspective (English)
+                          </label>
+                          <textarea
+                            value={formPerspectiveEn}
+                            onChange={(e) => setFormPerspectiveEn(e.target.value)}
+                            placeholder="Engineering and manufacturing comment in English."
+                            rows={2.5}
+                            className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-500 bg-white"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Turkish Fields */}
+                    {formLangTab === "tr" && (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Türkçe Başlık (튀르키예어 제목)</label>
+                          <input
+                            type="text"
+                            value={formTitleTr}
+                            onChange={(e) => setFormTitleTr(e.target.value)}
+                            placeholder="K-Savunma Küresel Talep Artışı ve Mühimmat Muhafaza Tüpü Testleri..."
+                            className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Türkçe Kart Özeti (튀르키예어 요약)</label>
+                          <textarea
+                            value={formSummaryTr}
+                            onChange={(e) => setFormSummaryTr(e.target.value)}
+                            placeholder="Haber kartı önizlemesi için kısa Türkçe özet."
+                            rows={2}
+                            className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Türkçe Temel İstihbarat Özeti (튀르키예어 핵심 요약)</label>
+                          <input
+                            type="text"
+                            value={formCoreTr}
+                            onChange={(e) => setFormCoreTr(e.target.value)}
+                            placeholder="Tek cümlelik temel istihbarat ve analiz özeti."
+                            className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Türkçe Detaylı Rapor Metni (튀르키예어 상세 본문)</label>
+                          <textarea
+                            value={formBodyTr}
+                            onChange={(e) => setFormBodyTr(e.target.value)}
+                            placeholder="Ayrıntılı savunma ve lojistik analiz raporu metni."
+                            rows={4}
+                            className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600"
+                          />
+                        </div>
+
+                        <div className="bg-military-50 p-4 rounded-xl border border-military-200">
+                          <label className="block text-xs font-bold text-military-800 uppercase tracking-wider mb-1 flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5 text-kraft-600" />
+                            Suwon Paper Industry Perspektifi (Türkçe)
+                          </label>
+                          <textarea
+                            value={formPerspectiveTr}
+                            onChange={(e) => setFormPerspectiveTr(e.target.value)}
+                            placeholder="Mühimmat güvenliği ve askeri ambalaj üretim mühendisliği yorumu."
+                            rows={2.5}
+                            className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-500 bg-white"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex justify-end gap-3.5 pt-2">

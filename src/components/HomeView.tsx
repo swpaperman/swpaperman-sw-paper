@@ -48,6 +48,10 @@ import {
   DEFAULT_DEFENSE_NEWS_SHEET_ID, 
   fetchDefenseNewsFromGoogleSheet 
 } from "../lib/googleWorkspace";
+import { 
+  getLocalizedNews, 
+  translateCategory 
+} from "../lib/newsTranslator";
 
 interface HomeViewProps {
   onTabChange: (tabId: string) => void;
@@ -252,6 +256,9 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
   const recentArticles = newsList.slice(1, 4);
   const activeAmmoSlide = AMMO_PRODUCT_SLIDES[currentAmmoIdx] || AMMO_PRODUCT_SLIDES[0];
 
+  const locTicker = getLocalizedNews(activeTickerArticle, language);
+  const locFeatured = getLocalizedNews(featuredArticle, language);
+
   const handlePrevAmmoSlide = (e: React.MouseEvent) => {
     e.stopPropagation();
     setCurrentAmmoIdx((prev) => (prev - 1 + AMMO_PRODUCT_SLIDES.length) % AMMO_PRODUCT_SLIDES.length);
@@ -285,7 +292,9 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
               </span>
               <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-mono text-gray-400 font-medium">
                 <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
-                {lastSyncTime.includes("2026") ? "2026-08-22 동기화" : "실시간 자동 동기화 가동 중"}
+                {lastSyncTime.includes("2026") 
+                  ? (language === "ko" ? "2026-08-22 동기화" : language === "tr" ? "22.08.2026 Senkronize" : "2026-08-22 Synced")
+                  : (language === "ko" ? "실시간 자동 동기화 가동 중" : language === "tr" ? "Otomatik senkronizasyon aktif" : "Real-time auto-sync active")}
               </span>
             </div>
 
@@ -295,7 +304,7 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
               className="flex-1 overflow-hidden cursor-pointer group flex items-center gap-2 w-full min-w-0 py-0.5 sm:py-0 px-1 hover:text-kraft-300 transition-colors"
             >
               <span className="hidden lg:inline-block text-[10px] font-mono font-bold text-kraft-400 bg-military-800/90 border border-military-600/50 px-2 py-0.5 rounded shrink-0">
-                {activeTickerArticle.category}
+                {locTicker.category}
               </span>
               <div className="flex-1 overflow-hidden relative h-5 sm:h-6 flex items-center">
                 <AnimatePresence mode="wait">
@@ -311,7 +320,7 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                       [{activeTickerArticle.date}]
                     </span>
                     <span className="truncate text-white font-bold tracking-tight group-hover:text-kraft-200">
-                      {activeTickerArticle.title}
+                      {locTicker.title}
                     </span>
                   </motion.div>
                 </AnimatePresence>
@@ -323,7 +332,7 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
               onClick={() => onTabChange("news")}
               className="shrink-0 self-end sm:self-auto inline-flex items-center gap-1.5 py-1 px-3 rounded-xl bg-kraft-500 hover:bg-kraft-400 text-gray-950 text-[11px] sm:text-xs font-black transition-all cursor-pointer shadow-sm hover:scale-[1.02] active:scale-98"
             >
-              <span>방산뉴스 허브</span>
+              <span>{language === "ko" ? "방산뉴스 허브" : language === "tr" ? "Savunma Haberleri" : "Defense News Hub"}</span>
               <ArrowRight className="w-3 h-3 text-gray-950" />
             </button>
           </div>
@@ -349,7 +358,9 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                   className="inline-flex items-center gap-1.5 py-1 px-3 rounded-full bg-military-850/90 hover:bg-military-800 border border-kraft-500/40 text-kraft-300 text-[11.5px] font-semibold cursor-pointer transition-all group"
                 >
                   <Flame className="w-3.5 h-3.5 text-amber-400 animate-bounce" />
-                  <span className="font-bold">K-방산 실시간 모니터링 활성</span>
+                  <span className="font-bold">
+                    {language === "ko" ? "K-방산 실시간 모니터링 활성" : language === "tr" ? "K-Savunma Canlı İzleme Aktif" : "K-Defense Live Monitoring Active"}
+                  </span>
                   <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                 </div>
               </div>
@@ -380,19 +391,25 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-[10.5px] font-mono font-bold text-kraft-350 flex items-center gap-1.5 uppercase">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                    실시간 방산 브리핑 • 2026.08.22 업데이트
+                    {language === "ko" 
+                      ? "실시간 방산 브리핑 • 2026.08.22 업데이트" 
+                      : language === "tr" 
+                        ? "Canlı Savunma Brifingi • 22.08.2026 Güncelleme" 
+                        : "Real-Time Defense Briefing • Aug 22, 2026 Updated"}
                   </span>
                   <span className="text-[10px] text-gray-400 group-hover:text-kraft-300 flex items-center gap-0.5 font-mono">
-                    뉴스 전문 보기 <ArrowUpRight className="w-3 h-3" />
+                    {language === "ko" ? "뉴스 전문 보기" : language === "tr" ? "Haber Detayını Oku" : "View Full Story"} <ArrowUpRight className="w-3 h-3" />
                   </span>
                 </div>
                 <p className="text-xs sm:text-[13px] font-bold text-white group-hover:text-kraft-200 transition-colors leading-snug line-clamp-2">
-                  {featuredArticle.title}
+                  {locFeatured.title}
                 </p>
                 <div className="mt-2 flex items-center gap-3 text-[10px] text-gray-400 font-mono">
-                  <span className="text-kraft-400 font-semibold">{featuredArticle.source}</span>
+                  <span className="text-kraft-400 font-semibold">{locFeatured.source}</span>
                   <span>•</span>
-                  <span className="text-emerald-400 font-medium">수원지관 방습 규격 기술 대응</span>
+                  <span className="text-emerald-400 font-medium">
+                    {language === "ko" ? "수원지관 방습 규격 기술 대응" : language === "tr" ? "Suwon Askeri Nem Bariyeri Çözümü" : "Suwon MIL-SPEC Moisture Barrier Solution"}
+                  </span>
                 </div>
               </div>
 
@@ -417,7 +434,7 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                   className="py-3.5 px-5 rounded-xl bg-military-850/80 hover:bg-military-800 text-kraft-300 text-[14px] sm:text-[15px] font-bold border border-kraft-500/40 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <TrendingUp className="w-4 h-4 text-kraft-400" />
-                  <span>K-방산 실시간 뉴스</span>
+                  <span>{language === "ko" ? "K-방산 실시간 뉴스" : language === "tr" ? "K-Savunma Canlı Haberler" : "K-Defense Real-Time News"}</span>
                 </button>
               </div>
             </div>
@@ -708,10 +725,16 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                 </span>
               </div>
               <h2 className="text-2xl sm:text-3.5xl font-black text-white tracking-tight leading-tight flex flex-wrap items-center gap-3">
-                <span>K-방산 실시간 군수 뉴스 & 시장 동향</span>
+                <span>
+                  {language === "ko" 
+                    ? "K-방산 실시간 군수 뉴스 & 시장 동향" 
+                    : language === "tr" 
+                      ? "K-Savunma Canlı Askeri Haberler & Piyasa Trendleri" 
+                      : "Real-Time K-Defense Logistics & Market News"}
+                </span>
                 <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-500/40 px-2.5 py-1 rounded-full flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  실시간 연동 활성
+                  {language === "ko" ? "실시간 연동 활성" : language === "tr" ? "Canlı Senkronizasyon Aktif" : "Live Sync Active"}
                 </span>
               </h2>
               <p className="text-xs sm:text-sm text-gray-400 leading-relaxed font-light">
@@ -728,7 +751,7 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                 onClick={() => onTabChange("news")}
                 className="py-3 px-5 rounded-xl bg-kraft-500 hover:bg-kraft-400 text-gray-950 text-xs sm:text-sm font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-lg active:scale-95 border-0 group"
               >
-                <span>방산뉴스 허브 전체보기</span>
+                <span>{language === "ko" ? "방산뉴스 허브 전체보기" : language === "tr" ? "Savunma Haberleri Merkezine Git" : "View Defense News Hub"}</span>
                 <ArrowRight className="w-4 h-4 text-gray-950 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
@@ -749,10 +772,10 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                   <div className="flex items-center gap-2">
                     <span className="inline-flex items-center gap-1 py-1 px-3 rounded-md bg-red-600/90 text-white text-[11px] font-black tracking-wide">
                       <Flame className="w-3.5 h-3.5" />
-                      최신 주요 속보
+                      {language === "ko" ? "최신 주요 속보" : language === "tr" ? "Son Dakika" : "Breaking News"}
                     </span>
                     <span className="py-1 px-3 rounded-md bg-military-800 text-kraft-300 text-[11px] font-mono font-bold border border-military-600/50">
-                      {featuredArticle.category}
+                      {locFeatured.category}
                     </span>
                   </div>
                   <span className="text-xs font-mono text-gray-400 flex items-center gap-1">
@@ -763,7 +786,7 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
 
                 {/* Title */}
                 <h3 className="text-lg sm:text-xl md:text-2xl font-black text-white group-hover:text-kraft-300 transition-colors leading-snug">
-                  {featuredArticle.title}
+                  {locFeatured.title}
                 </h3>
 
                 {/* Image & Summary Layout */}
@@ -772,7 +795,7 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                     <div className="sm:col-span-5 h-44 sm:h-48 rounded-2xl overflow-hidden bg-military-950 border border-military-700/60 shrink-0">
                       <img 
                         src={featuredArticle.imageUrl} 
-                        alt={featuredArticle.title}
+                        alt={locFeatured.title} 
                         referrerPolicy="no-referrer"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
@@ -780,10 +803,10 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                   )}
                   <div className={`${featuredArticle.imageUrl ? "sm:col-span-5" : "sm:col-span-12"} space-y-3`}>
                     <p className="text-xs sm:text-sm text-gray-300 leading-relaxed line-clamp-4 font-light">
-                      {featuredArticle.summary}
+                      {locFeatured.summary}
                     </p>
                     <div className="flex items-center gap-2 text-[11px] font-mono text-kraft-400">
-                      <span>출처: {featuredArticle.source}</span>
+                      <span>{language === "ko" ? "출처: " : language === "tr" ? "Kaynak: " : "Source: "}{locFeatured.source}</span>
                     </div>
                   </div>
                 </div>
@@ -792,10 +815,16 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                 <div className="bg-gradient-to-r from-kraft-950/80 via-military-900/90 to-military-950/90 border border-kraft-500/30 rounded-2xl p-4 space-y-1.5">
                   <div className="flex items-center gap-1.5 text-kraft-350 text-xs font-bold font-mono uppercase">
                     <Sparkles className="w-3.5 h-3.5 text-kraft-400" />
-                    <span>수원지관산업 제조 관점 (Suwon Manufacturing Insight)</span>
+                    <span>
+                      {language === "ko" 
+                        ? "수원지관산업 제조 관점 (Suwon Manufacturing Insight)" 
+                        : language === "tr" 
+                          ? "Suwon Paper Üretim ve Mühendislik Perspektifi" 
+                          : "Suwon Paper Manufacturing Insight"}
+                    </span>
                   </div>
                   <p className="text-xs text-gray-300 leading-relaxed font-light">
-                    {featuredArticle.perspective}
+                    {locFeatured.perspective}
                   </p>
                 </div>
               </div>
@@ -803,10 +832,14 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
               {/* Bottom Card Action */}
               <div className="mt-6 pt-4 border-t border-military-800/80 flex items-center justify-between text-xs text-kraft-400 font-bold group-hover:text-kraft-300">
                 <span className="flex items-center gap-1">
-                  뉴스 본문 & 군수 포장 사양 분석 전문 읽기
+                  {language === "ko" 
+                    ? "뉴스 본문 & 군수 포장 사양 분석 전문 읽기" 
+                    : language === "tr" 
+                      ? "Haber Metni & Askeri Ambalaj Analizini Oku" 
+                      : "Read Full Article & Military Packaging Analysis"}
                 </span>
                 <div className="flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                  <span>자세히 보기</span>
+                  <span>{language === "ko" ? "자세히 보기" : language === "tr" ? "Detayları Gör" : "View Details"}</span>
                   <ArrowRight className="w-4 h-4" />
                 </div>
               </div>
@@ -815,34 +848,37 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
             {/* Right Real-time Feed List (5 Cols) */}
             <div className="lg:col-span-5 flex flex-col justify-between space-y-4">
               <div className="space-y-3.5 flex-1">
-                {recentArticles.map((art, idx) => (
-                  <div
-                    key={art.id || idx}
-                    onClick={() => onTabChange("news")}
-                    className="p-4 rounded-2xl bg-military-900/70 hover:bg-military-850/90 border border-military-800/80 hover:border-kraft-500/50 transition-all duration-200 cursor-pointer group shadow-sm flex flex-col justify-between"
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <span className="text-[10px] font-mono font-bold text-kraft-350 bg-military-800 px-2 py-0.5 rounded border border-military-700/50">
-                        {art.category}
-                      </span>
-                      <span className="text-[10px] font-mono text-gray-400">
-                        {art.date}
-                      </span>
+                {recentArticles.map((art, idx) => {
+                  const locArt = getLocalizedNews(art, language);
+                  return (
+                    <div
+                      key={art.id || idx}
+                      onClick={() => onTabChange("news")}
+                      className="p-4 rounded-2xl bg-military-900/70 hover:bg-military-850/90 border border-military-800/80 hover:border-kraft-500/50 transition-all duration-200 cursor-pointer group shadow-sm flex flex-col justify-between"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span className="text-[10px] font-mono font-bold text-kraft-350 bg-military-800 px-2 py-0.5 rounded border border-military-700/50">
+                          {locArt.category}
+                        </span>
+                        <span className="text-[10px] font-mono text-gray-400">
+                          {art.date}
+                        </span>
+                      </div>
+                      <h4 className="text-xs sm:text-[13.5px] font-bold text-white group-hover:text-kraft-200 transition-colors leading-snug line-clamp-2">
+                        {locArt.title}
+                      </h4>
+                      <p className="text-[11px] text-gray-400 mt-1 line-clamp-2 font-light leading-relaxed">
+                        {locArt.summary}
+                      </p>
+                      <div className="mt-2.5 pt-2 border-t border-military-800/50 flex items-center justify-between text-[10px] text-gray-400 group-hover:text-kraft-300 font-mono">
+                        <span>{locArt.source}</span>
+                        <span className="flex items-center gap-0.5 font-bold">
+                          {language === "ko" ? "읽기" : language === "tr" ? "Oku" : "Read"} <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                        </span>
+                      </div>
                     </div>
-                    <h4 className="text-xs sm:text-[13.5px] font-bold text-white group-hover:text-kraft-200 transition-colors leading-snug line-clamp-2">
-                      {art.title}
-                    </h4>
-                    <p className="text-[11px] text-gray-400 mt-1 line-clamp-2 font-light leading-relaxed">
-                      {art.summary}
-                    </p>
-                    <div className="mt-2.5 pt-2 border-t border-military-800/50 flex items-center justify-between text-[10px] text-gray-400 group-hover:text-kraft-300 font-mono">
-                      <span>{art.source}</span>
-                      <span className="flex items-center gap-0.5 font-bold">
-                        읽기 <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Live Sync Status Info Box */}
@@ -853,10 +889,13 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                   </div>
                   <div>
                     <span className="block text-[11px] font-bold text-white">
-                      수원지관 뉴스 실시간 연동
+                      {language === "ko" ? "수원지관 뉴스 실시간 연동" : language === "tr" ? "Suwon Paper Haber Senkronizasyonu" : "Suwon Paper Real-Time News Sync"}
                     </span>
                     <span className="block text-[10px] font-mono text-gray-400">
-                      최근 동기화: {lastSyncTime.includes("2026") ? "2026-08-22 (정상)" : lastSyncTime}
+                      {language === "ko" ? "최근 동기화: " : language === "tr" ? "Son Güncelleme: " : "Last Synced: "}
+                      {lastSyncTime.includes("2026") 
+                        ? (language === "ko" ? "2026-08-22 (정상)" : language === "tr" ? "22.08.2026 (Aktif)" : "2026-08-22 (OK)") 
+                        : lastSyncTime}
                     </span>
                   </div>
                 </div>
@@ -866,7 +905,7 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                   className="w-full sm:w-auto py-2 px-3.5 rounded-xl bg-military-800 hover:bg-military-750 text-kraft-300 text-xs font-bold border border-military-600 transition-colors flex items-center justify-center gap-1 cursor-pointer shrink-0 hover:border-kraft-500/60"
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>수원지관 동기화 센터</span>
+                  <span>{language === "ko" ? "수원지관 동기화 센터" : language === "tr" ? "Suwon Senkronizasyon Merkezi" : "Suwon Sync Center"}</span>
                 </button>
               </div>
             </div>
