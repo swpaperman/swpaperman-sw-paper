@@ -32,12 +32,12 @@ export const timelineData: TimelineEvent[] = [
 export const productData: ProductItem[] = [
   {
     id: "ammunition-tube",
-    name: "탄약 포장용 지환통",
+    name: "탄약지환통",
     englishName: "Ammunition Fiberboard Paper Tubes",
     badge: "방위산업 지정물자",
     category: "defense",
     summary: "밀폐, 방습, 고압축 설계로 장기 보관 및 격렬한 탄약 운송을 안전하게 보호하는 전군 납품용 특수 지관.",
-    description: "MIL-SPEC(미군수 표준 규격 및 국방 규격) 표준을 완벽히 충족하며, 국방과학연구소(ADD)와 공동으로 국산화 및 혁신 개발에 참여하여 1975년 방위산업물자로 지정을 취득한 이래 전군에 무장 필수 보호 패키지로 공급해오고 있는 고기술 지환통입니다. 극한의 환경에서의 습기 유입을 차단하고 격렬한 야지 수송 과정 중 완벽한 물리적 강도로 정밀 기폭 원자재를 보호합니다.",
+    description: "MIL-SPEC(미군수 표준 규격 및 국방 규격) 표준을 완벽히 충족하며, 국방과학연구소(ADD)와 공동으로 국산화 및 혁신 개발에 참여하여 1975년 방위산업물자로 지정을 취득한 이래 전군에 무장 필수 보호 패키지로 공급해오고 있는 고기술 탄약지환통입니다. 극한의 환경에서의 습기 유입을 차단하고 격렬한 야지 수송 과정 중 완벽한 물리적 강도로 정밀 기폭 원자재를 보호합니다.",
     features: [
       "방수/방습 차단막 다중 설계 (내벽 방습 알루미늄 배리어 및 왁스 임프레그네이션)",
       "격렬한 투하 및 차량 수송 시 충격을 흡수하는 나선형 고결합 강도 와인딩 공법",
@@ -131,7 +131,7 @@ export const certificateData: CertificateInfo[] = [
     subtitle: "KSQ ISO 9001 / ISO 9001",
     date: "2019년 08월 (최초 2004년 6월 획득)",
     authority: "한국품질재단(KFQ)",
-    number: "지관 및 군사 암모 포장용 지환통의 설계, 개발 및 생산"
+    number: "지관 및 군사 탄약 포장용 탄약지환통의 설계, 개발 및 생산"
   },
   {
     id: "dqms",
@@ -139,7 +139,7 @@ export const certificateData: CertificateInfo[] = [
     subtitle: "DQMS (Defense Quality Management System)",
     date: "2015년 03월",
     authority: "국방기술품질원 (DTaQ)",
-    number: "군사 작전용 탄약 지환통 및 포장 보관 장치 분야의 연구개발 생산 및 품질 보증"
+    number: "군사 작전용 탄약지환통 및 포장 보관 장치 분야의 연구개발 생산 및 품질 보증"
   },
   {
     id: "iso-14001",
@@ -167,7 +167,7 @@ export const facilityData: FacilityItem[] = [
   {
     id: "facility-3",
     title: "정밀 지관 보정 및 유틸리티 캡 정착 라인",
-    description: "군용 지환통 마감에 투입되는 스틸 링 칼라 조립과 이중 안전 마개를 공압 장비로 완전 결속하며 복합 가습 상태 조절 시험 및 내낙하 하중 저정 실시간 샘플링 검사를 동시 거치는 최종 관수 품질 보증 시설입니다.",
+    description: "군용 탄약지환통 마감에 투입되는 스틸 링 칼라 조립과 이중 안전 마개를 공압 장비로 완전 결속하며 복합 가습 상태 조절 시험 및 내낙하 하중 저정 실시간 샘플링 검사를 동시 거치는 최종 관수 품질 보증 시설입니다.",
     imageUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&q=80&w=800"
   }
 ];

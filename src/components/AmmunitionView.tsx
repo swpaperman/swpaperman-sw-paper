@@ -33,7 +33,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
   const productHistory = [
     { 
       name: language === "ko" 
-        ? "60MM KM 576 지환통" 
+        ? "60MM KM 576 탄약지환통" 
         : language === "tr" 
           ? "60MM KM 576 Mühimmat Kutusu" 
           : "60MM KM 576 Handheld Tube", 
@@ -42,7 +42,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "81MM KM 252A4 지환통" 
+        ? "81MM KM 252A4 탄약지환통" 
         : language === "tr" 
           ? "81MM KM 252A4 Havan Kutusu" 
           : "81MM KM 252A4 Mortar Tube", 
@@ -51,7 +51,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "105MM KM 105A3 지환통" 
+        ? "105MM KM 105A3 탄약지환통" 
         : language === "tr" 
           ? "105MM KM 105A3 Obüs Kutusu" 
           : "105MM KM 105A3 Artillery Tube", 
@@ -60,7 +60,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "세열수류탄용 지환통" 
+        ? "세열수류탄용 탄약지환통" 
         : language === "tr" 
           ? "El Bombası Koruyucu Silindiri" 
           : "Frag Grenade Container", 
@@ -69,7 +69,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "90MM(R) KPA56 지환통" 
+        ? "90MM(R) KPA56 탄약지환통" 
         : language === "tr" 
           ? "90MM(R) KPA56 Roket Kutusu" 
           : "90MM(R) KPA56 Rocket Tube", 
@@ -78,7 +78,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "90MM(G) KM411 지환통" 
+        ? "90MM(G) KM411 탄약지환통" 
         : language === "tr" 
           ? "90MM(G) KM411 Tank Mühimmat Kutusu" 
           : "90MM(G) KM411 Recoilless Rifle Tube", 
@@ -87,7 +87,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "106MM(R) KM316 지환통" 
+        ? "106MM(R) KM316 탄약지환통" 
         : language === "tr" 
           ? "106MM(R) KM316 Geri Tepmesiz Top Kutusu" 
           : "106MM(R) KM316 Artillery Tube", 
@@ -96,7 +96,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "최루수류탄용 지환통" 
+        ? "최루수류탄용 탄약지환통" 
         : language === "tr" 
           ? "Göz Yaşartıcı El Bombası Kutusu" 
           : "Tear Gas Grenade Sleeve", 
@@ -105,7 +105,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "35MM K1 지환통" 
+        ? "35MM K1 탄약지환통" 
         : language === "tr" 
           ? "35MM K1 Uçaksavar Mühimmat Kutusu" 
           : "35MM K1 Anti-Air Shell Sleeve", 
@@ -114,7 +114,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "105MM KM435 지환통" 
+        ? "105MM KM435 탄약지환통" 
         : language === "tr" 
           ? "105MM KM435 Tank Namlu Kutusu" 
           : "105MM KM435 Tank Ammo Sleeve", 
@@ -123,7 +123,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "130MM 탄두, 모타 지환통" 
+        ? "130MM 탄두, 모타 탄약지환통" 
         : language === "tr" 
           ? "130MM Çok Namlulu Roket Kartuşu" 
           : "130MM Warhead Rocket Motor core", 
@@ -132,7 +132,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "2.75인치 탄두, 모타, 완성탄 지환통" 
+        ? "2.75인치 탄두, 모타, 완성탄 탄약지환통" 
         : language === "tr" 
           ? "2.75 İnç Roket Motoru Komple Kutusu" 
           : "2.75-Inch Rocket Warhead & Motor Tube", 
@@ -141,7 +141,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "90MM 철갑탄 지환통" 
+        ? "90MM 철갑탄 탄약지환통" 
         : language === "tr" 
           ? "90MM Zırh Delici Mermi Kutusu" 
           : "90MM Armor-Piercing Shell Wavelength core", 
@@ -150,7 +150,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "60MM 조명탄 지환통" 
+        ? "60MM 조명탄 탄약지환통" 
         : language === "tr" 
           ? "60MM Aydınlatma Havanı Kutusu" 
           : "60MM Illumination Flare Winder core", 
@@ -159,7 +159,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "105MM 철갑탄 지환통" 
+        ? "105MM 철갑탄 탄약지환통" 
         : language === "tr" 
           ? "105MM APFSDS Zırh Delici Kutusu" 
           : "105MM APFSDS Projectile Tube", 
@@ -168,7 +168,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "81MM 조명탄 지환통" 
+        ? "81MM 조명탄 탄약지환통" 
         : language === "tr" 
           ? "81MM Aydınlatma Havan Kutusu" 
           : "81MM Illumination Flare Sleeve", 
@@ -177,7 +177,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "4.2 KM251A1A 지환통" 
+        ? "4.2 KM251A1A 탄약지환통" 
         : language === "tr" 
           ? "4.2 Inç KM251A1A Havan Kutusu" 
           : "4.2-Inch KM251A1A Heavy Mortar Tube", 
@@ -186,7 +186,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "60MM(신형) 지환통" 
+        ? "60MM(신형) 탄약지환통" 
         : language === "tr" 
           ? "60MM (Yeni Tip) Havan Kutusu" 
           : "60MM (New Model) Mortar Tube", 
@@ -195,7 +195,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "90MM(신형) HE, TP 지환통" 
+        ? "90MM(신형) HE, TP 탄약지환통" 
         : language === "tr" 
           ? "90MM (Yeni) Tahrip / Eğitim Başlığı Kutusu" 
           : "90MM (New Model) HE & TP Shell Sleeve", 
@@ -204,7 +204,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "81MM(신형) 지환통" 
+        ? "81MM(신형) 탄약지환통" 
         : language === "tr" 
           ? "81MM (Yeni Tip) Havan Kutusu" 
           : "81MM (New Model) Shell Tube", 
@@ -213,7 +213,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "105MM(신형) 철갑탄 지환통" 
+        ? "105MM(신형) 철갑탄 탄약지환통" 
         : language === "tr" 
           ? "105MM (Yeni) APFSDS Zırh Delici Kutusu" 
           : "105MM (New Model) APFSDS Tank Sleeve", 
@@ -222,7 +222,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "K5 지환통(K413 세열수류탄용)" 
+        ? "K5 탄약지환통(K413 세열수류탄용)" 
         : language === "tr" 
           ? "K5 Koruyucu Kutusu (K413 Savunma Bombası)" 
           : "K5 Grenade Carrier (K413 Grenade)", 
@@ -231,7 +231,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "K413 세열수류탄 친환경" 
+        ? "K413 세열수류탄 친환경 탄약지환통" 
         : language === "tr" 
           ? "K413 Geri Dönüştürülebilir El Bombası Haznesi" 
           : "K413 Eco Frag Grenade Body core", 
@@ -240,7 +240,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "친환경 탄약포장용 지관통" 
+        ? "친환경 탄약지환통" 
         : language === "tr" 
           ? "Doğa Dostu Mühimmat Ambalaj Silindiri" 
           : "Biodegradable Defense Packaging Sleeve", 
@@ -249,7 +249,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "120MM 6종 지환통" 
+        ? "120MM 6종 탄약지환통" 
         : language === "tr" 
           ? "120MM Tank Mühimmat 6 Farklı Boyut Kutusu" 
           : "120MM Multi-Purpose Heavy Ammunition Cores", 
@@ -258,7 +258,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "2.75인치 유도로켓" 
+        ? "2.75인치 유도로켓 탄약지환통" 
         : language === "tr" 
           ? "2.75 Inç Güdümlü Roket Kartuş Kılıfı" 
           : "2.75-Inch Guided LOGIR Tactical Core", 
@@ -267,7 +267,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "세라믹이 함유된 친환경 플라스틱 탄약통 및 탄약상자" 
+        ? "세라믹이 함유된 친환경 탄약지환통 및 탄약상자" 
         : language === "tr" 
           ? "Kompozit Seramik Katkılı Çelik Destekli Kutu" 
           : "Ceramic-Reinforced Hybrid Ammo Crate Core", 
@@ -276,7 +276,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "KMK25 MOD4 해상위치표시탄(New MLM)" 
+        ? "KMK25 MOD4 해상위치표시탄(New MLM) 탄약지환통" 
         : language === "tr" 
           ? "KMK25 MOD4 Deniz İşaretleme Fişeği Kutusu" 
           : "KMK25 MOD4 Marine Location Marker (New MLM) Container", 
@@ -294,7 +294,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
     },
     { 
       name: language === "ko" 
-        ? "주탄두, 선구탄두, 대어뢰용지환통" 
+        ? "주탄두, 선구탄두, 대어뢰용 탄약지환통" 
         : language === "tr" 
           ? "Ana Savaş Başlığı, Torpido Savunma Kovanı" 
           : "Main Warhead, Anti-Torpedo Protective Heavy core", 
@@ -481,14 +481,14 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 text-sm sm:text-[15px] font-light leading-relaxed">
             <p className="text-gray-650">
               {language === "ko" 
-                ? "수원지관산업은 60년 이상 축적된 지관 제조 기술을 기반으로, MIL-SPEC 및 KDS 8140-4005 국방규격의 요구 조건을 참고하여 탄약 포장용 지환통을 생산하고 있습니다."
+                ? "수원지관산업은 60년 이상 축적된 지관 제조 기술을 기반으로, MIL-SPEC 및 KDS 8140-4005 국방규격의 요구 조건을 참고하여 탄약지환통을 생산하고 있습니다."
                 : language === "tr"
                   ? "Suwon Paper Cone & Tube, 60 yılı aşan imalat birikimiyle MIL-SPEC ve KDS 8140-4005 Kore Ulusal Savunma standartlarına tam uyumlu mühimmat koruyucu ambalaj tüpleri üretmektedir."
                   : "Leveraging over 60 years of production expertise, SUWON manufactures container systems referencing demanding MIL-SPEC and KDS 8140-4005 national defense parameters."}
             </p>
             <p className="text-gray-655">
               {language === "ko" 
-                ? "원지 투입 및 지관 성형, 방습 처리, 정밀 절단, 금속 플랜지 및 칼라 조립, 보호 캡 조립에 이르는 제조 공정을 통해 탄약의 장기 저장성과 운송 안정성을 높이는 지환통을 제작합니다."
+                ? "원지 투입 및 지관 성형, 방습 처리, 정밀 절단, 금속 플랜지 및 칼라 조립, 보호 캡 조립에 이르는 제조 공정을 통해 탄약의 장기 저장성과 운송 안정성을 높이는 탄약지환통을 제작합니다."
                 : language === "tr"
                   ? "Karton besleme, helisel sarım, nem koruyucu kaplama, dairesel dilimleme ve metal/plastik sızdırmaz kapak montaj adımları ile mühimmatın açık havada saklama ömrünü uzatıyoruz."
                   : "Our strict manufacturing pipeline (wrapping, humidity wax barriers, high-speed cutting, and airtight metallic cap assembly) assures excellent storage stamina for extreme military logistical fields."}

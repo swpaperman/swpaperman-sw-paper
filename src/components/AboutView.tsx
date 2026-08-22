@@ -285,10 +285,10 @@ export default function AboutView() {
       icon: "🌱",
       desc: "기후 변화에 대응하는 친환경 특수 발습 소재 개발과 지능형 스마트 제조 공정 및 국방 독점 품질 규격 완성 시대",
       events: [
-        { date: "2023 ~ 현재", text: "국방규격 KDS8140-4005 친환경 탄약포장용지환통 양산진행 (품질확인 및 승인 : 기품원 - 국방기술품질원)", isHighlight: true, type: "defense" },
+        { date: "2023 ~ 현재", text: "국방규격 KDS8140-4005 친환경 탄약지환통 양산진행 (품질확인 및 승인 : 기품원 - 국방기술품질원)", isHighlight: true, type: "defense" },
         { date: "2020. 10", text: "의약외품 제조업 신고 (식약처 등록)", type: "cert" },
         { date: "2019. 12", text: "DQ마크인증서 획득 (탄약지환통)", isHighlight: true, type: "defense" },
-        { date: "2015. 09", text: "국방기술품질원 성능시험평가 충족 (친환경 탄약포장용 지환통)", isHighlight: true, type: "defense" },
+        { date: "2015. 09", text: "국방기술품질원 성능시험평가 충족 (친환경 탄약지환통)", isHighlight: true, type: "defense" },
         { date: "2015. 05", text: "기업부설연구소 인증 획득", type: "rnd" },
         { date: "2015. 03", text: "국방품질경영체제 DQMS 인증 획득 (탄약지환통류의 제조)", isHighlight: true, type: "defense" }
       ]
@@ -309,7 +309,7 @@ export default function AboutView() {
         { date: "2014. 04", text: "경영혁신형 중소기업 (Main-Biz) 인증 획득", type: "cert" },
         { date: "2013. 04", text: "여성기업인증 획득", type: "business" },
         { date: "2010. 06", text: "벤처기업 등록", type: "business" },
-        { date: "2010. 04", text: "품질보증 (Q마크) 획득 (탄약포장용 지환통 / 창형표적기)", isHighlight: true, type: "defense" },
+        { date: "2010. 04", text: "품질보증 (Q마크) 획득 (탄약지환통 / 창형표적기)", isHighlight: true, type: "defense" },
         { date: "2010. 04", text: "환경경영시스템인증 (KS Q ISO 14001)", type: "cert" },
         { date: "2010. 03", text: "연구개발전담부서 등록 (한국산업기술진흥협회)", type: "rnd" },
         { date: "2010. 03", text: "한국산업기술진흥협회 회원 등록", type: "rnd" },
@@ -331,7 +331,7 @@ export default function AboutView() {
       text: "text-blue-700",
       border: "border-blue-100",
       icon: "🛡️",
-      desc: "초대 수원지관 태동 및 국방부 공식 탄약 지환통 군수물자 정식 조달 지정 등 대한민국 안보 산업과 궤를 같이 해온 헌신",
+      desc: "초대 수원지관 태동 및 국방부 공식 탄약지환통 군수물자 정식 조달 지정 등 대한민국 안보 산업과 궤를 같이 해온 헌신",
       events: [
         { date: "1997. 02", text: "주요 방산물자 수출업 정식 허가 취득 (국방부)", isHighlight: true, type: "defense" },
         { date: "1989. 11", text: "주요 방위산업체 지정", isHighlight: true, type: "defense" },
@@ -340,7 +340,7 @@ export default function AboutView() {
         { date: "1979. 10", text: "우수군납업체 지정 (국방부)", isHighlight: true, type: "defense" },
         { date: "1979. 03", text: "항공견인표적기 군수물자 지정 (국방부)", isHighlight: true, type: "defense" },
         { date: "1978. 04", text: "주요 방위산업체 지정 (상공부)", isHighlight: true, type: "defense" },
-        { date: "1975. 11", text: "탄약포장용 지환통 군수물자 지정 (안보 수호 납품 실증)", isHighlight: true, type: "defense" },
+        { date: "1975. 11", text: "탄약지환통 군수물자 지정 (안보 수호 납품 실증)", isHighlight: true, type: "defense" },
         { date: "1964. 04", text: "수원지관 설립 (창립자 정신 계승 발족)", isHighlight: true, type: "founding" }
       ]
     }
@@ -396,7 +396,7 @@ export default function AboutView() {
           <div className="lg:col-span-7 space-y-6 text-gray-700 leading-relaxed font-light text-sm sm:text-base">
             <h3 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight">
               {language === "ko" ? (
-                <>지관 기술 제조의 역사와 진정성으로 <br />고품질 최정밀 군수 지환통 공급에 임합니다.</>
+                <>지관 기술 제조의 역사와 진정성으로 <br />고품질 최정밀 군수 탄약지환통 공급에 임합니다.</>
               ) : language === "tr" ? (
                 <>Köklü üretim tarihimiz ve dürüstlüğümüzle <br />yüksek kaliteli mühimmat kutuları tedarik ediyoruz.</>
               ) : (
@@ -413,7 +413,7 @@ export default function AboutView() {
             </p>
             <p>
               {language === "ko"
-                ? "특히 당사는 탄약 포장용 지환통 제조를 주력으로 하여, 장기 비치 중 습기로부터 기동 탄약을 보호할 수 있는 습기 차단 코팅막 제조 능력과 군수품 수송 기준의 강하력 낙하 충격을 분산시키는 대각 나선 결착 와인더 기술을 정량화하고 지속 개선해 왔습니다."
+                ? "특히 당사는 탄약지환통 제조를 주력으로 하여, 장기 비치 중 습기로부터 기동 탄약을 보호할 수 있는 습기 차단 코팅막 제조 능력과 군수품 수송 기준의 강하력 낙하 충격을 분산시키는 대각 나선 결착 와인더 기술을 정량화하고 지속 개선해 왔습니다."
                 : language === "tr"
                   ? "Özellikle mühimmat silindirik ambalajlarında uzmanlaşan firmamız, neme karşı koruyucu özel bariyer kaplama hatlarımızı (mühimmatı uzun süreli depolama şartlarında nemden tam koruyan) ve düşme-darbe kuvvetlerini sönümleyen diagonal spiral sarım teknolojilerimizi sürekli olarak geliştirip standartlaştırmıştır."
                   : "In particular, specializing in ammunition fiber containers, we have quantified and continually refined our specialty barrier coating line (protecting active ammo from humidity during long-term storage) and diagonal spiral winding structure (dissipating impact from drops and rough military transits)."}
@@ -477,7 +477,7 @@ export default function AboutView() {
                   <span className="block font-bold text-gray-900">{language === "ko" ? "주요 사업군" : language === "tr" ? "Ana Faaliyet Alanı" : "Core Business"}</span>
                   <p className="text-gray-500 text-xs mt-0.5">
                     {language === "ko" 
-                      ? "탄약 포장용 특수 지환통 전문 제조, 민수/공업 범용 대·소규격 스파이럴 종이 지관 가공" 
+                      ? "탄약지환통 전문 제조, 민수/공업 범용 대·소규격 스파이럴 종이 지관 가공" 
                       : language === "tr"
                         ? "Askeri mühimmat ambalaj muhafaza boruları ve sivil çapta endüstriyel spiral mihver karton boru imalatı"
                         : "Specialized defense ammunition paperboard containers and civilian-industrial spiral paper tubes manufacturing"}
@@ -505,7 +505,7 @@ export default function AboutView() {
           
           <p className="text-xs sm:text-sm text-gray-500 font-light mb-8 max-w-3xl leading-relaxed">
             {language === "ko"
-              ? "주식회사 수원지관산업은 고내구 탄약 지환통 부설 기술연구소와 엄격한 품질 보증 관제를 실현하는 스마트 비즈니스 오피스 공간을 가동하여, 완벽한 국가 군수 보급 시스템과 글로벌 거래처 대응 인프라를 구축하고 있습니다."
+              ? "주식회사 수원지관산업은 고내구 탄약지환통 부설 기술연구소와 엄격한 품질 보증 관제를 실현하는 스마트 비즈니스 오피스 공간을 가동하여, 완벽한 국가 군수 보급 시스템과 글로벌 거래처 대응 인프라를 구축하고 있습니다."
               : language === "tr"
                 ? "Şirketimiz bünyesinde, yüksek dayanıklılığa sahip askeri kutular için kurulan resmi Ar-Ge Laboratuvarı ve sıkı Kalite Güvence denetim kurgularını yönettiğimiz akıllı ofisimiz ile sarsıntısız bir ulusal askeri sevkiyat zinciri entegrasyonu sunuyoruz."
                 : "By operating a dedicated R&D lab for high-durability defense containers alongside a smart administration office for strict Quality Assurance control, Suwon Paper Cone guarantees a perfect national military logistics supply chain and global responsive networks."}
@@ -666,7 +666,7 @@ export default function AboutView() {
 
           <p className="text-xs sm:text-sm text-gray-500 font-light mb-8 max-w-3xl leading-relaxed">
             {language === "ko"
-              ? "1964년 초대 설립부터 가깝게는 탄약포장용 친환경 지환통의 국가 국방 규격 지정 양산에 이르기까지, 주식회사 수원지관산업의 강도 높은 정밀 제조 역사는 대한민국 자주국방의 발자취와 함께 성장해 왔습니다."
+              ? "1964년 초대 설립부터 가깝게는 친환경 탄약지환통의 국가 국방 규격 지정 양산에 이르기까지, 주식회사 수원지관산업의 강도 높은 정밀 제조 역사는 대한민국 자주국방의 발자취와 함께 성장해 왔습니다."
               : language === "tr"
                 ? "1964 yılındaki kuruluşumuzdan, askeri nitelikteki çevre dostu mühimmat fiber boru kutularının seri üretimine uzanan süreçte; hassas üretim kültürümüz Kore Cumhuriyeti'nin milli savunma sanayi hamleleriyle omuz omuza yükselmiştir."
                 : "From our founding in 1964 to the mass production of military-spec eco-friendly ammunition storage tubes, our high-precision manufacturing history has progressed hand-in-hand with the growth of South Korea's sovereign national defense."}

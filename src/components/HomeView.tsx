@@ -11,6 +11,7 @@ import {
   Calculator, 
   Package, 
   ChevronRight, 
+  ChevronLeft,
   CheckCircle2, 
   ArrowRight,
   ExternalLink,
@@ -24,15 +25,26 @@ import {
   ArrowUpRight,
   Flame,
   Bell,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Maximize2,
+  X,
+  Pause,
+  Play,
+  Eye
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useLanguage } from "../context/LanguageContext";
 import { 
   getStoredDefenseNews, 
   getStoredLastSyncTime, 
+  saveDefenseNewsToStorage,
+  DEFAULT_DEFENSE_NEWS,
   DefenseNewsItem 
 } from "../lib/defenseNewsStore";
+import { 
+  DEFAULT_DEFENSE_NEWS_SHEET_ID, 
+  fetchDefenseNewsFromGoogleSheet 
+} from "../lib/googleWorkspace";
 
 interface HomeViewProps {
   onTabChange: (tabId: string) => void;
@@ -137,11 +149,55 @@ const defensePartners = [
   }
 ];
 
+export const AMMO_PRODUCT_SLIDES = [
+  {
+    id: "ammo-lineup-1",
+    title: "탄약지환통 라인업",
+    sub: "KDS & MIL-SPEC 규격 기반 다품종 탄약지환통 라인업",
+    tag: "KDS / MIL-SPEC",
+    spec: "KC521 • KC511 • KC18 • KC266 • KC01 외 전 계열",
+    url: "https://lh3.googleusercontent.com/d/1tXrnyb3Y_ApswrRWveDzk5O9ua8F9gqV",
+    desc: "155mm, 105mm, 박격포탄, 유도탄용 국방규격 고강도 탄약지환통"
+  },
+  {
+    id: "ammo-precision-tube",
+    title: "탄약지환통",
+    sub: "KDS 국방규격 초정밀 탄약 및 추진제 전용 방습 탄약지환통",
+    tag: "AMMUNITION TUBE",
+    spec: "고강도 다층 나선 권취 및 진공 레진 함침 공법",
+    url: "https://lh3.googleusercontent.com/d/1m-VV6yFIZ8n0B6j9dnrb3TyFlMZTxdu6",
+    desc: "정밀 치수 가공과 다중 방습 차단막으로 추진제 및 탄약의 최적 보존 상태를 유지하는 탄약지환통"
+  },
+  {
+    id: "ammo-lineup-2",
+    title: "탄약지환통 라인업",
+    sub: "다양한 구경별 정밀 치수 제어 및 맞춤형 캡 어셈블리",
+    tag: "ALL LINEUP",
+    spec: "소구경 신관부터 중·대구경 탄약 보호용 탄약지환통 전 라인",
+    url: "https://lh3.googleusercontent.com/d/1uqFLlJdJYsa499QEw2glDiP4n-02x5lK",
+    desc: "초정밀 스파이럴 나선 권취 및 완벽한 기밀성 유지를 위한 특수 접착 공법 적용 탄약지환통"
+  },
+  {
+    id: "ammo-structure",
+    title: "탄약지환통 구조",
+    sub: "고강도 다층 크라프트 구조 및 다기능 방습·완충 설계",
+    tag: "STRUCTURE & TECH",
+    spec: "내외면 방습 코팅 + 금속 캡 + 완충 링 어셈블리",
+    url: "https://lh3.googleusercontent.com/d/1rQag_cgI0fS1LYRjaAG56X6OL4u0EvWq",
+    desc: "수분 침투 원천 차단 및 극한의 하중·충격에도 형상을 유지하는 특수 다층 구조 탄약지환통"
+  }
+];
+
 export default function HomeView({ onTabChange }: HomeViewProps) {
   const { language, t } = useLanguage();
   const [newsList, setNewsList] = useState<DefenseNewsItem[]>(() => getStoredDefenseNews());
   const [lastSyncTime, setLastSyncTime] = useState<string>(() => getStoredLastSyncTime());
   const [currentTickerIdx, setCurrentTickerIdx] = useState(0);
+
+  // Ammunition Products Rolling Carousel State
+  const [currentAmmoIdx, setCurrentAmmoIdx] = useState(0);
+  const [isAmmoPaused, setIsAmmoPaused] = useState(false);
+  const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
 
   // Auto-update news from localStorage if updated in another tab or sheet sync
   useEffect(() => {
@@ -150,6 +206,20 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
       setLastSyncTime(getStoredLastSyncTime());
     };
     window.addEventListener("storage", handleStorageChange);
+
+    // Initial background sync with Google Sheet to ensure 100% factual data
+    fetchDefenseNewsFromGoogleSheet(DEFAULT_DEFENSE_NEWS_SHEET_ID)
+      .then(res => {
+        if (res.success && res.articles && res.articles.length > 0) {
+          saveDefenseNewsToStorage(res.articles);
+          setNewsList(res.articles);
+          setLastSyncTime(new Date().toLocaleTimeString());
+        }
+      })
+      .catch(err => {
+        console.warn("Background sheet sync notice:", err);
+      });
+
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
@@ -162,9 +232,29 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
     return () => clearInterval(interval);
   }, [newsList.length]);
 
+  // Auto-roll ammo product images every 4.2 seconds (pauses on hover or modal open)
+  useEffect(() => {
+    if (isAmmoPaused || isZoomModalOpen) return;
+    const interval = setInterval(() => {
+      setCurrentAmmoIdx((prev) => (prev + 1) % AMMO_PRODUCT_SLIDES.length);
+    }, 4200);
+    return () => clearInterval(interval);
+  }, [isAmmoPaused, isZoomModalOpen]);
+
   const activeTickerArticle = newsList[currentTickerIdx] || newsList[0];
   const featuredArticle = newsList[0] || activeTickerArticle;
-  const recentArticles = newsList.slice(1, 5);
+  const recentArticles = newsList.slice(1, 4);
+  const activeAmmoSlide = AMMO_PRODUCT_SLIDES[currentAmmoIdx] || AMMO_PRODUCT_SLIDES[0];
+
+  const handlePrevAmmoSlide = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentAmmoIdx((prev) => (prev - 1 + AMMO_PRODUCT_SLIDES.length) % AMMO_PRODUCT_SLIDES.length);
+  };
+
+  const handleNextAmmoSlide = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentAmmoIdx((prev) => (prev + 1) % AMMO_PRODUCT_SLIDES.length);
+  };
 
   return (
     <div className="bg-white min-h-screen font-sans">
@@ -296,7 +386,7 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                 <div className="mt-2 flex items-center gap-3 text-[10px] text-gray-400 font-mono">
                   <span className="text-kraft-400 font-semibold">{featuredArticle.source}</span>
                   <span>•</span>
-                  <span className="text-emerald-400 font-medium">수원지관 방습 규격 연계 공급</span>
+                  <span className="text-emerald-400 font-medium">수원지관 방습 규격 기술 대응</span>
                 </div>
               </div>
 
@@ -326,40 +416,140 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
               </div>
             </div>
 
-            {/* Right Column: Visual Wireframe Simulation Panel */}
-            <div className="w-full max-w-[475px] sm:max-w-[495px] lg:max-w-[510px] xl:max-w-[520px] shrink-0">
-              <div className="p-5 sm:p-6 rounded-2xl bg-military-850/90 border border-military-700/80 backdrop-blur-sm shadow-2xl relative overflow-hidden text-white flex flex-col justify-between h-full min-h-[420px] lg:min-h-[460px] xl:min-h-[490px]">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-kraft-50/5 rounded-full blur-xl pointer-events-none" />
+            {/* Right Column: Visual Wireframe Simulation Panel - Enlarged & Rolling Carousel */}
+            <div className="w-full max-w-[500px] sm:max-w-[540px] lg:max-w-[540px] xl:max-w-[600px] 2xl:max-w-[640px] shrink-0">
+              <div 
+                className="p-5 sm:p-6 xl:p-7 rounded-2xl bg-military-850/95 border border-military-700/80 backdrop-blur-md shadow-2xl relative overflow-hidden text-white flex flex-col justify-between h-full min-h-[500px] lg:min-h-[560px] xl:min-h-[600px]"
+                onMouseEnter={() => setIsAmmoPaused(true)}
+                onMouseLeave={() => setIsAmmoPaused(false)}
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-kraft-500/10 rounded-full blur-2xl pointer-events-none" />
                 
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-[11px] font-mono font-bold text-kraft-400 tracking-wider uppercase">
-                    {t.home.specHeader}
-                  </span>
-                  <span className="text-[10px] font-mono text-gray-400 font-semibold uppercase tracking-wider">
+                {/* Header with Title & Rolling Indicator */}
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] font-mono font-black text-kraft-350 tracking-wider uppercase">
+                      {t.home.specHeader}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[9.5px] font-mono font-bold text-kraft-400/90 bg-military-950/80 px-2 py-0.5 rounded border border-kraft-500/30">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      실시간 롤링
+                    </span>
+                  </div>
+                  <span className="text-[10.5px] font-mono text-gray-400 font-bold uppercase tracking-wider">
                     MIL-SPEC / KDS BASED
                   </span>
                 </div>
 
-                {/* Real Product Image Container */}
-                <div className="bg-military-900 rounded-xl p-3 flex flex-col justify-center items-center border border-military-800/80 shadow-inner relative group/img mb-4 flex-1">
-                  <div className="w-full h-36 sm:h-44 xl:h-46 rounded-lg overflow-hidden bg-military-950 flex items-center justify-center relative">
-                     <img 
-                       src="https://lh3.googleusercontent.com/d/1tXrnyb3Y_ApswrRWveDzk5O9ua8F9gqV" 
-                       alt="SUWON AMMUNITION CONTAINER" 
-                       referrerPolicy="no-referrer"
-                       className="w-full h-full object-cover rounded-md group-hover/img:scale-105 transition-transform duration-500"
-                     />
-                     <div className="absolute top-2 right-2 bg-military-900/90 backdrop-blur-xs text-[9.5px] font-mono font-bold text-kraft-400 px-2 py-0.5 rounded border border-military-700/40">
-                       EST. 1964
-                     </div>
+                {/* Real Product Image Carousel Container (Enlarged) */}
+                <div className="bg-military-950 rounded-xl p-3 sm:p-4 flex flex-col justify-center items-center border border-military-750/90 shadow-2xl relative group/img mb-4 flex-1">
+                  
+                  {/* Image Display Area with Framer Motion Transition */}
+                  <div 
+                    onClick={() => setIsZoomModalOpen(true)}
+                    className="w-full h-56 sm:h-68 md:h-76 xl:h-84 rounded-lg overflow-hidden bg-gradient-to-b from-black via-military-950 to-black flex items-center justify-center relative cursor-zoom-in group/canvas border border-military-800/80"
+                  >
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activeAmmoSlide.id}
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.02 }}
+                        transition={{ duration: 0.45, ease: "easeInOut" }}
+                        className="w-full h-full flex items-center justify-center p-2 relative"
+                      >
+                        <img 
+                          src={activeAmmoSlide.url} 
+                          alt={activeAmmoSlide.title} 
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.8)] group-hover/canvas:scale-[1.03] transition-transform duration-500"
+                        />
+                      </motion.div>
+                    </AnimatePresence>
+
+                    {/* Top Overlay Badges */}
+                    <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5 pointer-events-none">
+                      <span className="bg-military-900/90 backdrop-blur-sm text-[9.5px] font-mono font-bold text-kraft-350 px-2 py-0.5 rounded border border-kraft-500/40 shadow-sm">
+                        {activeAmmoSlide.tag}
+                      </span>
+                    </div>
+
+                    <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsZoomModalOpen(true);
+                        }}
+                        className="bg-black/70 hover:bg-black/90 text-white/90 hover:text-white p-1.5 rounded-lg border border-white/20 transition-all flex items-center gap-1 text-[10px] font-mono cursor-pointer backdrop-blur-xs shadow-md"
+                        title="고화질 확대보기"
+                      >
+                        <Maximize2 className="w-3.5 h-3.5 text-kraft-400" />
+                        <span className="hidden sm:inline text-[9.5px] font-bold">확대보기</span>
+                      </button>
+                      <div className="bg-military-900/90 backdrop-blur-xs text-[9.5px] font-mono font-bold text-gray-300 px-2 py-1 rounded border border-military-700/60">
+                        {`0${currentAmmoIdx + 1} / 0${AMMO_PRODUCT_SLIDES.length}`}
+                      </div>
+                    </div>
+
+                    {/* Prev / Next Hover Controls */}
+                    <button
+                      onClick={handlePrevAmmoSlide}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-military-800 text-white border border-white/20 flex items-center justify-center opacity-0 group-hover/canvas:opacity-100 transition-all duration-300 cursor-pointer shadow-lg hover:scale-110 z-10"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="w-4.5 h-4.5 text-white" />
+                    </button>
+
+                    <button
+                      onClick={handleNextAmmoSlide}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-military-800 text-white border border-white/20 flex items-center justify-center opacity-0 group-hover/canvas:opacity-100 transition-all duration-300 cursor-pointer shadow-lg hover:scale-110 z-10"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="w-4.5 h-4.5 text-white" />
+                    </button>
+
+                    {/* Bottom Indicator Dots */}
+                    <div className="absolute bottom-2.5 inset-x-0 flex justify-center items-center gap-1.5 z-10 pointer-events-auto">
+                      {AMMO_PRODUCT_SLIDES.map((slide, idx) => (
+                        <button
+                          key={slide.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentAmmoIdx(idx);
+                          }}
+                          className={`transition-all duration-300 rounded-full h-1.5 cursor-pointer ${
+                            currentAmmoIdx === idx 
+                              ? "w-6 bg-kraft-400 shadow-[0_0_8px_rgba(230,180,80,0.8)]" 
+                              : "w-1.5 bg-white/40 hover:bg-white/80"
+                          }`}
+                          aria-label={`Slide ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
                   </div>
                   
-                  <span className="mt-3 block text-xs sm:text-sm font-sans font-black text-kraft-300 uppercase tracking-wider text-center leading-tight">
-                    {t.home.realProductTitle}
-                  </span>
-                  <span className="text-[10px] sm:text-[11px] text-gray-300 font-medium font-sans mt-1 text-center opacity-95 tracking-wide leading-tight">
-                    {t.home.realProductSub}
-                  </span>
+                  {/* Dynamic Caption for the active image */}
+                  <div className="w-full mt-3.5 text-center">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activeAmmoSlide.id}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-xs sm:text-[14px] font-sans font-black text-kraft-300 uppercase tracking-wider leading-tight">
+                            {activeAmmoSlide.title}
+                          </span>
+                        </div>
+                        <div className="text-[10.5px] sm:text-[11.5px] text-gray-300 font-medium font-sans mt-1.5 space-y-1 opacity-95 tracking-wide leading-snug">
+                          <p className="block">{activeAmmoSlide.sub}</p>
+                          <p className="block font-mono text-kraft-400 font-semibold">• {activeAmmoSlide.spec}</p>
+                        </div>
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
                 </div>
 
                 {/* Parameter Metrics list with aligned typography */}
@@ -520,10 +710,10 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
               </h2>
               <p className="text-xs sm:text-sm text-gray-400 leading-relaxed font-light">
                 {language === "ko"
-                  ? "매일 아침 08:00 구글 시트 및 AI 수집망과 자동 동기화되는 K-방산 최신 속보와, 탄약 보존 지환통 60년 전문 제조사 수원지관산업의 실무 인사이트를 실시간으로 전달합니다."
+                  ? "실시간으로 K-방산 최신 속보와, 수원지관산업의 실무 인사이트를 전달합니다."
                   : language === "tr"
-                    ? "Kore savunma sanayii son dakika haberleri, NATO mühimmat paketleme standartları ve Suwon Paper'ın 60 yıllık askeri üretim analizleri anlık olarak güncellenir."
-                    : "Real-time updates on K-Defense supply chains, NATO defense packaging standards, and technical insights from 60-year defense packaging leader Suwon Paper Tube."}
+                    ? "Kore savunma sanayii son dakika haberleri ve Suwon Paper Tube'un askeri üretim ve teknik değerlendirmeleri anlık olarak sunulmaktadır."
+                    : "Delivering real-time K-Defense breaking news and operational insights from Suwon Paper Tube."}
               </p>
             </div>
 
@@ -867,7 +1057,7 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                   </h4>
                   <p className="text-xs sm:text-sm text-gray-500 leading-relaxed font-light">
                     {language === "ko"
-                      ? "지환통에 보존적재될 최종 탄약 및 전술 완성탄 하드웨어를 설계·조립하는 국내 굴지의 대표 방위산업종합 제조 파트너입니다."
+                      ? "탄약지환통에 보존적재될 최종 탄약 및 전술 완성탄 하드웨어를 설계·조립하는 국내 굴지의 대표 방위산업종합 제조 파트너입니다."
                       : language === "tr"
                         ? "Karton muhafazaların içine yerleştirilecek nihai canlı mühimmatları ve taktik donanımları tasarlayıp birleştiren lider savunma sanayii entegratörleridir."
                         : "Leading defense prime contractors that design and assemble state-of-the-art live ammunition and tactical weapon hardware loaded inside our containers."}
@@ -1255,6 +1445,123 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
           </div>
         </div>
       </section>
+
+      {/* 7. HIGH-RESOLUTION ZOOM MODAL (탄약지환통 고해상도 확대 뷰어 모달) */}
+      <AnimatePresence>
+        {isZoomModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsZoomModalOpen(false)}
+            className="fixed inset-0 z-50 bg-black/92 backdrop-blur-md flex flex-col justify-between p-4 sm:p-6 lg:p-8"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between text-white max-w-6xl mx-auto w-full" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2.5">
+                <span className="bg-kraft-500 text-gray-950 text-[11px] font-mono font-black px-2.5 py-1 rounded">
+                  {activeAmmoSlide.tag}
+                </span>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-white leading-tight">
+                    {activeAmmoSlide.title}
+                  </h3>
+                  <p className="text-xs text-gray-400 font-mono hidden sm:block">
+                    {activeAmmoSlide.spec}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-gray-400 bg-military-900 px-3 py-1 rounded-lg border border-military-800">
+                  {`0${currentAmmoIdx + 1} / 0${AMMO_PRODUCT_SLIDES.length}`}
+                </span>
+                <button
+                  onClick={() => setIsZoomModalOpen(false)}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                  title="닫기 (ESC)"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Main Image Stage */}
+            <div className="relative flex-1 flex items-center justify-center max-w-6xl mx-auto w-full my-4" onClick={(e) => e.stopPropagation()}>
+              {/* Prev Button */}
+              <button
+                onClick={handlePrevAmmoSlide}
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/70 hover:bg-military-800 text-white border border-white/20 flex items-center justify-center transition-all cursor-pointer shadow-2xl hover:scale-110 z-20"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="w-6 h-6 text-white" />
+              </button>
+
+              {/* Main Enlarged Image */}
+              <div className="w-full h-full max-h-[72vh] flex items-center justify-center">
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={activeAmmoSlide.id}
+                    src={activeAmmoSlide.url}
+                    alt={activeAmmoSlide.title}
+                    referrerPolicy="no-referrer"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.05 }}
+                    transition={{ duration: 0.3 }}
+                    className="max-h-full max-w-full object-contain rounded-xl shadow-2xl border border-military-800/80 bg-gradient-to-b from-military-950 to-black p-3"
+                  />
+                </AnimatePresence>
+              </div>
+
+              {/* Next Button */}
+              <button
+                onClick={handleNextAmmoSlide}
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/70 hover:bg-military-800 text-white border border-white/20 flex items-center justify-center transition-all cursor-pointer shadow-2xl hover:scale-110 z-20"
+                aria-label="Next image"
+              >
+                <ChevronRight className="w-6 h-6 text-white" />
+              </button>
+            </div>
+
+            {/* Modal Bottom Thumbnail Strip & Detail Bar */}
+            <div className="max-w-6xl mx-auto w-full" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-military-900/90 border border-military-800 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-center sm:text-left">
+                  <span className="text-xs sm:text-sm font-bold text-kraft-300 block">
+                    {activeAmmoSlide.sub}
+                  </span>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    {activeAmmoSlide.desc}
+                  </p>
+                </div>
+
+                {/* Thumbnails */}
+                <div className="flex items-center gap-2">
+                  {AMMO_PRODUCT_SLIDES.map((slide, idx) => (
+                    <button
+                      key={slide.id}
+                      onClick={() => setCurrentAmmoIdx(idx)}
+                      className={`relative w-12 h-10 sm:w-14 sm:h-12 rounded-lg overflow-hidden border-2 transition-all cursor-pointer bg-black ${
+                        currentAmmoIdx === idx
+                          ? "border-kraft-400 scale-105 shadow-[0_0_10px_rgba(230,180,80,0.6)]"
+                          : "border-gray-700 opacity-50 hover:opacity-100"
+                      }`}
+                    >
+                      <img
+                        src={slide.url}
+                        alt={slide.title}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

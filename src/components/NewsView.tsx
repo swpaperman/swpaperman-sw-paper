@@ -38,6 +38,10 @@ import {
   googleSignIn, 
   getAccessToken 
 } from "../lib/googleWorkspace";
+import { 
+  DEFAULT_DEFENSE_NEWS, 
+  DefenseNewsItem 
+} from "../lib/defenseNewsStore";
 
 const defensePartners = [
   {
@@ -160,233 +164,29 @@ interface NewsViewProps {
 export default function NewsView({ onTabChange }: NewsViewProps) {
   const { language, t } = useLanguage();
 
-  // Basic initial articles reflecting professional real-world parameters
-  const initialArticles: NewsArticle[] = [
-    {
-      id: "news-sw-20260822-1",
-      tab: "domestic",
-      category: "국내 방산기업",
-      title: "한화에어로스페이스·풍산, 155mm 포탄 월 10만발 양산 체계 조기 가동 및 수출용 방습 지환통 포장 표준화 협력",
-      summary: "K-방산 주력 155mm 포탄 및 사거리연장탄 수출 물량 급증에 대응해 완제 탄약 제조사와 포장재 전문기업 간 방습 규격 지환통 조달 일원화가 본격화됩니다.",
-      source: "국방일보 / 방산수출속보",
-      date: "2026-08-22",
-      url: "https://kookbang.dema.mil.kr/",
-      imageUrl: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=600&q=80",
-      coreSummary: "유럽 및 중동 수주 이행을 위한 탄약 생산라인 100% 가동 및 KDS8140 군수 포장재 대량 연계 공급망 구축",
-      bodyText: "한화에어로스페이스와 풍산이 2026년 하반기 대규모 포탄 수출 계약 이행을 위해 155mm 자주포 탄약 양산 능력을 전면 확대했습니다. 이에 따라 보관 중 추진제와 화약의 수분 노출을 차단하는 국방규격(KDS) 고밀도 나선 지환통의 품질 안정성 및 적시 납품 체계가 K-방산 수출 신뢰도의 핵심 요소로 부각되고 있습니다.",
-      perspective: "수원지관산업은 60여 년간 축적된 군수 지환통 특허 및 방습 레진 함침 기술을 통해 155mm 포탄 및 각종 화포 탄약의 까다로운 군수 포장 규격을 100% 만족하며 전방 수출 라인에 안정적으로 공급하고 있습니다."
-    },
-    {
-      id: "news-sw-20260822-2",
-      tab: "domestic",
-      category: "군수품 포장·보관·수송",
-      title: "방위사업청, 2026 K-방산 탄약·정밀유도무기 야전 장기보존용 특수 지환 포장 국방규격(KDS) 개정 발표",
-      summary: "극단적 온·습도 환경에서의 탄약 장기 보존성을 강화하기 위해 특수 다층 방습 지환통 및 생분해성 크라프트 패키징 기준이 신규 개정되었습니다.",
-      source: "방위사업청 국방표준원",
-      date: "2026-08-22",
-      url: "https://www.dapa.go.kr",
-      imageUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80",
-      coreSummary: "나토(NATO) 및 국방표준 부합 다층 방습 수지 함침 지환통의 조달 심사 가점 및 친환경 재생 규격 신설",
-      bodyText: "방위사업청과 국방기술품질원은 2026년 8월 22일, 수출형 탄약 및 군수품 포장재에 대한 신규 표준 규격을 발표했습니다. 추진제 화약의 열화를 원천 방지하는 정밀 가열 접합 지환관 기술과 야전 폐기 시 환경 부담을 최소화하는 친환경 재생 크라프트 소재 적용이 권고되었습니다.",
-      perspective: "수원지관산업의 원천 기술인 고밀도 나선 권취 및 진공 왁스 코팅 공법은 개정된 국방규격의 극한 기밀성·방습성 시험을 최우수 지표로 통과하여 즉각적인 납품 대응이 가능합니다."
-    },
-    {
-      id: "news-sw-20260822-3",
-      tab: "global",
-      category: "글로벌 방산시장",
-      title: "NATO 유럽 연합방위군, K-자주포 및 탄약 패키징 친환경 고강도 지환통 표준 채택 가속화",
-      summary: "유럽 나토 연합군이 탄약창 현대화 사업을 추진하며, 기존 플라스틱 용기를 대체할 경량 고강도 생분해 지환통 패키징 수입을 대폭 확대하기로 결정했습니다.",
-      source: "Global Defense Logistics Weekly",
-      date: "2026-08-22",
-      url: "https://www.nato.int",
-      imageUrl: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=600&q=80",
-      coreSummary: "화물 수송 중량 30% 경감 및 야전 사격 후 잔여 포장재의 자연 소거성 입증으로 글로벌 수주 경쟁력 제고",
-      bodyText: "나토 물류사령부는 연합 방위 훈련 과정에서 발생하는 탄약 포장 폐기물 처리와 항공·해상 수송 연비 개선을 위해 친환경 고밀도 지관통 패키지를 정규 보급 사양으로 채택했습니다. 정밀한 내경 오차 관리와 낙하 충격 흡수력이 우수한 한국산 군수 지환통에 대한 관심이 집중되고 있습니다.",
-      perspective: "당사의 정밀 치수 제어 가공과 초정밀 진원도 관리 기술은 우방국의 다양한 규격 요구를 밀리미터 단위 이하의 오차로 충족하여 글로벌 공급망에서 탁월한 평가를 받고 있습니다."
-    },
-    {
-      id: "news-sw-20260822-4",
-      tab: "domestic",
-      category: "국방 조달",
-      title: "LIG넥스원·ADD, 차세대 유도무기 및 다연장 로켓 추진체 보호용 특수 복합 지관 개발 성과 발표",
-      summary: "초정밀 로켓 추진기관의 보관 중 외압 및 습기 유입을 차단하는 고강도 복합 원형 지관의 현장 신뢰성 평가가 성공적으로 마무리되었습니다.",
-      source: "국방과학연구소(ADD) 소식지",
-      date: "2026-08-22",
-      url: "https://www.add.re.kr",
-      imageUrl: "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80",
-      coreSummary: "유도 로켓 및 정밀 추진체의 장기 보관 안정성을 극대화하는 맞춤형 원통 패키징 솔루션 구축",
-      bodyText: "국방과학연구소와 LIG넥스원은 차세대 유도무기 체계의 야전 작전 전개 시 외부 충격과 기상 악조건으로부터 정밀 센서 및 추진제를 보호하는 특수 고강도 튜브 하우징을 개발했다고 밝혔습니다. 복합 다층 지관 구조를 통해 금속 용기 대비 경량화와 경제성을 동시에 달성했습니다.",
-      perspective: "수원지관산업은 축적된 대구경·고두께 지관 생산 노하우를 바탕으로, 소구경 탄약부터 대형 유도탄 보호용 특수 튜브까지 도면 맞춤형 정밀 제작 역량을 보유하고 있습니다."
-    },
-    {
-      id: "news-sw-1",
-      tab: "suwon",
-      category: "수원지관 소식",
-      title: "수원지관산업, 탄약 포장용 지환통 중심 홈페이지 개편",
-      summary: "수원지관산업은 탄약 포장용 지환통 전문 제조기업으로서 제품 정보, 규격 상담, 재고판매 문의 기능을 강화한 홈페이지를 준비하고 있습니다.",
-      source: "수원지관산업 공식 공지",
-      date: "2026-06-08",
-      url: "https://www.combat-packaging.com",
-      imageUrl: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80",
-      coreSummary: "사용자 편의성을 대폭 보강하고 군수 및 산업 분야의 다변화된 요구사항에 즉시 대응할 수 있는 인터랙티브 채널 구축",
-      bodyText: "60년 이상의 제조 기술을 보유한 수원지관산업은 더욱 정교하고 엄밀한 탄약지환통 및 산업용 고강도 지관 규격을 고객사 도면에 맞춰 공급하기 위해 홈페이지를 개편했습니다. 견적 양식 전송 시스템과 오차 시뮬레이터, 세금계산서 전용 특판 코너를 전면 배치했습니다.",
-      perspective: "탄약 생산과 공급이 확대될수록 탄약의 보관, 수송, 취급 과정에서 포장재의 역할은 더욱 중요해집니다. 탄약 포장용 지환통은 단순 포장재가 아니라 탄약의 장기 저장성과 운송 안정성을 보완하는 기능성 보호 용기입니다."
-    },
-    {
-      id: "news-sw-2",
-      tab: "suwon",
-      category: "수원지관 소식",
-      title: "탄약지환통 및 일반 산업용 지관 맞춤 제작 상담 운영",
-      summary: "고객 도면과 요구 규격에 따라 탄약 포장용 지환통과 일반 산업용 지관의 맞춤 제작 상담을 진행합니다.",
-      source: "수원지관산업 생산본부",
-      date: "2026-06-05",
-      url: "https://www.combat-packaging.com",
-      imageUrl: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=600&q=80",
-      coreSummary: "군용 및 산업용 정밀 지관의 기계적 물성과 내수성, 내열 요건을 만족하는 맞춤 다층 가공 대응 체계 가동",
-      bodyText: "수원지관산업은 국내외 다양한 방산 가동 기업 및 제조업체들의 고유 규격 도면에 따른 소량 주문 제작부터 연속 양산 생산까지 폭넓은 유연 생산 체계를 보유하고 있으며, 정밀 구경 오차 최소화와 견고한 패키징 보존 성능을 담보합니다.",
-      perspective: "정밀 절단 치수와 진원도(Roundness) 관리는 지환통 결합 시 군용 탄약의 조립 정밀도 및 현장 신속 장전에 결정적인 품질 인자입니다. 당사의 오랜 기계 가동 축적 기술이 이를 뒷받침합니다."
-    },
-    {
-      id: "news-sw-3",
-      tab: "suwon",
-      category: "수원지관 소식",
-      title: "재고 지관 및 샘플 제품 판매 문의 접수 안내",
-      summary: "보유 중인 재고 지관, 샘플 제품, 잔여 생산품은 문의 접수 후 견적서 및 전자세금계산서 방식으로 거래가 가능합니다.",
-      source: "수원지관산업 영업부",
-      date: "2026-06-03",
-      url: "https://www.combat-packaging.com",
-      imageUrl: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80",
-      coreSummary: "일반 소비자 카드 정산 채널을 배제하고 투명한 기업 대 기업(B2B) 세금계산서 정식 거래 방식 준수",
-      bodyText: "생산 공정에서 발생하는 검수 적합 샘플 및 여분 잔여 수량에 대해 실용적인 단가 조정을 거친 특판을 항시 업데이트하고 있습니다. 모든 특판 물량은 정식 도면 사양 및 환경 요구 조건에 따라 검증된 완제품들이며 안전하고 신속한 공급 시스템을 보장합니다.",
-      perspective: "합리적인 완제품 자원 순환과 신속 공급은 탄포 및 각종 지관 포장재를 긴급히 요하는 전방 사양 테스터 고객사들에게 빠르고 효과적인 납품 솔루션을 지원하는 실질 통로입니다."
-    },
-    {
-      id: "news-sw-4",
-      tab: "suwon",
-      category: "수원지관 소식",
-      title: "국방규격 기반 공정 품질관리 운영",
-      summary: "수원지관산업은 탄약 포장용 지환통 생산 과정에서 원자재 확인, 성형, 방습 처리, 절단, 조립, 출하 검사 등 공정별 품질관리를 운영하고 있습니다.",
-      source: "수원지관산업 품질보증부",
-      date: "2026-05-28",
-      url: "https://www.combat-packaging.com",
-      imageUrl: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80",
-      coreSummary: "다층 방습 공법 함입 및 수치 제어 커팅을 통한 영하 및 고온 조건 하 치수 규격 안정성 확보",
-      bodyText: "국방규격에 부합하는 가공 성능 요건을 반영하여 외압에 견디는 복합 압축 강도를 엄격히 검수합니다. 특수 적층 수지 왁스를 지환 원지 내외면에 일정 온도 이상에서 골고루 진공 함침 시켜 군 요구사항 중 가장 밀접한 방습 계수를 완전히 준수하고 있습니다.",
-      perspective: "종이 소재 원천 기술을 바탕으로 개발된 당사의 방습 처리와 정밀 절단 기술은 수분 유입에 지극히 민감한 추진제 장약의 오발 및 화약 보존 실패 가능성을 완벽히 억제합니다."
-    },
-    {
-      id: "news-1",
-      tab: "domestic",
-      category: "탄약·화약류 산업",
-      title: "K-방산 자주포 및 소화기 수출 호조에 따른 국내 탄약 생산라인 전면 가동 증가",
-      summary: "세계적인 국방 긴장 조율과 대한민국 자주포 탄약 수출 이행 계약 증대에 따라 국내 탄약 전방위 주관 제조 인프라 공급 물량이 급증하고 있습니다.",
-      source: "방산총연 보도자료",
-      date: "2026-05-15",
-      url: "https://kookbang.dema.mil.kr/",
-      imageUrl: "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80",
-      coreSummary: "폴란드 2차 이행계약 및 유럽 긴급 전술 자산 소요 대처로 인한 국산 탄약 신호탄 점화",
-      bodyText: "최근 대한민국 핵심 자주포 체계의 수조원대 해외 수주를 필두로, 실포 사격 훈련과 정밀 비축 목적 of 155mm 자주포 탄약 수요가 기하급수적으로 폭증했습니다. 이로 인해 풍산 등 탄약 완제품 조립 체계업체를 둘러싼 국내 다공정 부품 공급망이 최고 가동률을 이어가고 있으며, 안전 보증과 방출 성능 통제를 위한 군수 포장재 산업 또한 대규모 증산 주기에 진입했습니다.",
-      perspective: "탄약 생산과 공급이 확대될수록 탄약의 보관, 수송, 취급 과정에서 포장재의 역할은 더욱 중요해집니다. 탄약 포장용 지환통은 단순 포장재가 아니라 탄약의 장기 저장성과 야지 기동 시 가해지는 물리 충격 흡수 등 운송 안정성을 보안하는 핵심 기능성 보호 용기입니다."
-    },
-    {
-      id: "news-2",
-      tab: "global",
-      category: "탄약 수요",
-      title: "글로벌 155mm 포탄 규격 쇼티지 장기화 및 방습 장기 안전보관 포장 중요성 대두",
-      summary: "지정학적 리스크 장기화에 따른 미·유럽 연합군의 포탄 비축량 개선 요구사항이 늘어남에 따라 극한 조건에서도 고성능을 보장하는 특수 적층 패키징 관심이 증대되고 있습니다.",
-      source: "Global Defense Review",
-      date: "2026-05-02",
-      url: "https://www.defense.gov",
-      imageUrl: "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=600&q=80",
-      coreSummary: "기존 일반 비축 체계의 한계를 탈피하고 보존 품질 연한을 획기적으로 연장하는 특수 패키징 가치 제고",
-      bodyText: "유럽 주요 군사 당국 및 우방국 작전 사령부 통계에 따르면 155mm급 야포 포탄 수요 대비 글로벌 실질 제조 능력이 한계에 봉착했습니다. 단순 긴급 납품에 그쳤던 품질 기조에서 벗어나 극한 야지 및 원거리 다습 해상 이동 경로상의 장기 열화 방지 처리가 규제화되고 있으며 탄약 패키지 보강이 시급 과제로 지적됩니다.",
-      perspective: "보관 환경의 상대습도 극단 통제는 탄약 내부 추진 화약재의 열화를 방지하는 최선책입니다. 당사가 60년 넘게 축적해온 고밀도 원지 적층 성형 기술과 레진 코팅 수분 차단 기술은 글로벌 우방군의 장기 화약 품질 연한 유지 요구규격에 최적화된 대안입니다."
-    },
-    {
-      id: "news-3",
-      tab: "domestic",
-      category: "군수품 포장·보관·수송",
-      title: "차세대 한국형 탄약 포장용 고강도 특수 지환통 국방 규격 성능 평가 추진",
-      summary: "습기 투과 인자 방침 마련 및 다층 방습 가공 지환통의 충격 및 낙하 시 변형 억제 시험이 양호한 품질 지표를 갱신하고 있습니다.",
-      source: "방위산업진흥학회 저널",
-      date: "2026-04-18",
-      url: "https://www.kdia.or.kr",
-      imageUrl: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=600&q=80",
-      coreSummary: "온·습도 극한 편차를 극복하는 다층 복합 지환 원통의 열화 억제 인장 내력 증명 완료",
-      bodyText: "국가별 극한 지리 기후 변화에 대응할 수 있도록 탄약 보호용 종이 지환통관의 다층 습기 유입 차단 계수가 중요한 시험 항목으로 추가 연구 및 제안되고 있습니다. 방습 왁스 코팅 함침을 고도화하여 기상 변화 시에도 외경 변동이 최소화되는 수축 복원력이 주요 성능으로 조명받았습니다.",
-      perspective: "기존의 일반 지관통 공정과 달리, 당사가 제조하는 탄약 포장용 지환통은 초미세 이음새 정밀 가열 접합 및 진공 함침 공법을 사용하여 내경 치수를 밀리미터 단위를 넘어서는 정확도로 생산합니다. 이는 극한 상황 속 포격 장비 장전 시 지장을 주지 않는 완벽한 제원 준수를 입증합니다."
-    },
-    {
-      id: "news-4",
-      tab: "global",
-      category: "방산 공급망",
-      title: "나토(NATO) 탄약 부품 보존망 표준 제정 : 재생 크라프트 원지 기반 군수 지환통 적용 검토",
-      summary: "탄소 배출 완화 규범에 따라 군수 부문 친환경 패키징 및 운송 자원 보전성에 있어 고강도 튜브 지환통이 최선의 효율적 규격으로 제안되고 있습니다.",
-      source: "NATO Logistics Division Reports",
-      date: "2026-03-12",
-      url: "https://www.nato.int",
-      imageUrl: "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=600&q=80",
-      coreSummary: "플라스틱 대체 친환경 군수 부자재 확대와 단단한 적층 지환관의 비용대비 보호 하이라이트",
-      bodyText: "글로벌 방위 협약국 기조 아래에서 신속 제염 처리와 저탄소 생분해 특성을 갖춘 포장 조달 체계 비중이 높아졌습니다. 고강도 친환경 크라프트 목재 펄프 가공 튜브 패키징은 소멸식 사격 후 잔여 포장재 폐기를 원활하게 해 정전 야전 편의를 극대화 시킵니다.",
-      perspective: "폐기 시 친환경성이 우수한 지환 원통은 아군 보급 진지의 흔적을 최소화하는 방산 작전 전술 of 일부이기도 합니다. 이와 동시에 가벼운 중량으로 군수 화물 수송 연비를 획기적으로 개선하여 전술적 강점을 보유하게 합니다."
-    }
-  ];
-
-  // Load from LocalStorage or Fallback
+  // Load from LocalStorage or Fallback to Google Sheet factual news
   const [articles, setArticles] = useState<NewsArticle[]>(() => {
     const saved = localStorage.getItem("sw_defense_news");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        const cleaned = Array.isArray(parsed)
-          ? parsed.map((art: any) => {
-              const updated = { ...art };
-              if (["제품·생산 공지", "재고판매 안내", "품질·생산 관리", "수원지관 소식"].includes(art.category) || art.id?.startsWith("news-sw-")) {
-                if (art.tab !== "domestic" && art.tab !== "global") {
-                  updated.category = "수원지관 소식";
-                  updated.tab = "suwon";
-                }
-              }
-              // Force-overwrite template layouts with our non-broken IDs
-              const matchedTemplate = initialArticles.find((init) => init.id === updated.id);
-              if (matchedTemplate) {
-                updated.imageUrl = matchedTemplate.imageUrl;
-              }
-
-              // Dynamically inject default image if missing or resolving to old broken/flat pictures
-              if (!updated.imageUrl || updated.imageUrl.includes("1579713591404-585a97576f3f") || updated.imageUrl.includes("1508873699372-7aeab60b44ab")) {
-                if (updated.tab === "suwon") {
-                  updated.imageUrl = "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80";
-                } else if (updated.tab === "domestic") {
-                  updated.imageUrl = "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80";
-                } else {
-                  updated.imageUrl = "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=600&q=80";
-                }
-              }
-              return updated;
-            })
-          : [];
-
-        // Merge initial 2026-08-22 articles if missing in stored data
-        const initial2026Ids = initialArticles.filter(a => a.date === "2026-08-22");
-        const existingIds = new Set(cleaned.map((a: any) => a.id));
-        const missingAugust22 = initial2026Ids.filter(a => !existingIds.has(a.id));
-
-        const combined = [...missingAugust22, ...cleaned];
-
-        // Perform strict duplicate ID elimination before setting state
-        const seen = new Set();
-        return combined.filter((art: NewsArticle) => {
-          if (!art.id) return false;
-          if (seen.has(art.id)) return false;
-          seen.add(art.id);
-          return true;
-        });
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Check for outdated mock articles and filter them out
+          const cleaned = parsed.filter((art: any) => {
+            if (!art || !art.title) return false;
+            // Remove mock items from old tests
+            if (art.id?.startsWith("news-sw-20260822-") || art.id === "news-1" || art.id === "news-2") return false;
+            return true;
+          });
+          if (cleaned.length > 0) {
+            return cleaned;
+          }
+        }
       } catch (err) {
-        return initialArticles;
+        console.warn("Failed to load stored news:", err);
       }
     }
-    return initialArticles;
+    return DEFAULT_DEFENSE_NEWS as NewsArticle[];
   });
 
   // Save to LocalStorage whenever articles change
@@ -401,7 +201,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
   const [isSyncingSheet, setIsSyncingSheet] = useState(false);
   const [sheetSyncError, setSheetSyncError] = useState<string | null>(null);
   const [lastSyncTime, setLastSyncTime] = useState<string>(() => {
-    return localStorage.getItem("sw_defense_last_sync_time") || "매일 아침 08:00 자동 동기화 활성 (최신: 2026-08-22)";
+    return localStorage.getItem("sw_defense_last_sync_time") || "매일 아침 08:00 자동 동기화 활성 (최신 100% 팩트 연동)";
   });
   const [isSheetSettingsOpen, setIsSheetSettingsOpen] = useState(false);
   const [isPermissionGuideOpen, setIsPermissionGuideOpen] = useState(false);
@@ -503,7 +303,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
         const category = row[5]?.trim() || "국내 방산기업";
         const core = row[6]?.trim() || summary.slice(0, 80);
         const body = row[7]?.trim() || summary || title;
-        const persp = row[8]?.trim() || "수원지관산업의 60년 방산규격 지환통 가공 및 고도 방습 코팅 원천 기술은 추진제와 화약의 장기 야전 보존 신뢰성을 완벽하게 보장합니다.";
+        const persp = row[8]?.trim() || "탄약 보존 및 수송 안전성이 중요해지는 흐름에 맞춰, 수원지관산업의 60년 방산규격 지환통 가공 및 고도 방습 코팅 원천 기술은 추진제와 화약의 장기 야전 보존 신뢰성을 지원할 수 있는 솔루션으로 검토 및 적용될 수 있습니다.";
 
         return {
           id: `news-paste-${Date.now()}-${idx + 1}`,
@@ -564,70 +364,9 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
     }, 300);
   };
 
-  // Live AI News States
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
-  const [aiSources, setAiSources] = useState<{ title: string; uri: string }[]>([]);
-
-  const fetchLiveAiNews = async () => {
-    setAiLoading(true);
-    setAiError(null);
-    try {
-      const response = await fetch("/api/defense-news/live", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-      const data = await response.json();
-      if (data.success && data.articles && data.articles.length > 0) {
-        // Enforce uniqueness of IDs in the fetched articles to prevent duplicate key errors in React
-        const sanitizedArticles = data.articles.map((art: any, index: number) => {
-          // If Gemini returned articles with duplicate/non-unique/no IDs, we guarantee a unique ID
-          const cleanId = art.id ? (art.id.startsWith("news-ai-") ? art.id : `news-ai-${art.id}`) : `news-ai-${index}`;
-          // Add timestamp/index to avoid collisions
-          return {
-            ...art,
-            id: `${cleanId}-${index}-${Date.now()}`
-          };
-        });
-
-        setArticles(prev => {
-          const liveIds = new Set(sanitizedArticles.map((art: any) => art.id));
-          const filteredPrev = prev.filter(art => art.id && !liveIds.has(art.id));
-          const merged = [...sanitizedArticles, ...filteredPrev];
-          
-          // Deduplicate by ID just in case to be 100% robust
-          const seen = new Set();
-          return merged.filter(art => {
-            if (!art.id) return false;
-            if (seen.has(art.id)) return false;
-            seen.add(art.id);
-            return true;
-          });
-        });
-        
-        if (data.sources) {
-          setAiSources(data.sources);
-        }
-        showNotification("실시간 AI 기반 K-방산 최신 뉴스 분석이 완료되었습니다.");
-      } else {
-        setAiError(data.error || "실시간 AI 데이터를 수집할 수 없었습니다. API 서버 상태를 확인해주세요.");
-      }
-    } catch (err: any) {
-      console.error(err);
-      setAiError("실시간 AI 서버 연결에 실패했습니다. AI Studio 비밀 키가 설정되어 있는지 확인해주세요.");
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  // Automatically trigger AI fetch on mount if there's no live-analysis news yet
+  // Automatically trigger factual Google Sheet sync on mount
   useEffect(() => {
-    const hasLiveArticles = articles.some(art => art.id?.startsWith("news-ai-"));
-    if (!hasLiveArticles) {
-      fetchLiveAiNews();
-    }
+    syncWithGoogleSheet();
   }, []);
 
   // Search & Filtering State
@@ -725,7 +464,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
     setFormImageUrl("");
     setFormCore("");
     setFormBody("");
-    setFormPerspective("탄약 생산과 공급이 확대될수록 탄약의 보관, 수송, 취급 과정에서 포장재의 역할은 더욱 중요해집니다. 탄약 포장용 지환통은 단순 포장재가 아니라 탄약의 장기 저장성과 운송 안정성을 보완하는 기능성 보호 용기입니다.");
+    setFormPerspective("탄약 생산과 공급이 확대될수록 탄약의 보관, 수송, 취급 과정에서 포장재의 역할은 더욱 중요해집니다. 탄약지환통은 단순 포장재가 아니라 탄약의 장기 저장성과 운송 안정성을 보완하는 기능성 보호 용기입니다.");
     setIsFormOpen(true);
   };
 
@@ -817,33 +556,10 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
 
   // Reset Articles to default
   const resetToDefault = () => {
-    if (window.confirm("초기 데이터로 다시 복구하시겠습니까?")) {
-      setArticles(initialArticles);
+    if (window.confirm("기본 팩트 데이터로 다시 복구하시겠습니까?")) {
+      setArticles(DEFAULT_DEFENSE_NEWS);
       showNotification("기본 데이터로 리셋되었습니다.");
     }
-  };
-
-  // Simulate RSS / AI Summary Integration
-  const simulateAPIImport = () => {
-    const mockFeed = [
-      {
-        id: `news-sim-${Date.now()}`,
-        tab: "domestic" as const,
-        category: "국방 조달",
-        title: "[API 수신] 2026-2030 방위사업청 주요 탄약 조달 예산안 발표 분석",
-        summary: "방위사업청의 5개년 추가 군사 부품 및 탄약 보존 자재 통합 조달 예산 방향성이 승인되었습니다.",
-        source: "방위사업청 공고 요약봇",
-        date: new Date().toISOString().split('T')[0],
-        url: "https://www.dapa.go.kr",
-        imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80",
-        coreSummary: "신속 전술 재배치용 방습 규격 지환통 등 국내 수급 국방포장 예산 최적 배정",
-        bodyText: "이번 전술 장기 화약 안정화 계획의 일환으로 극한 보존 포장재 조달 단가가 현실화되어, 습기에 극도로 강한 특수 레진 코팅 종관 보급 예산이 정식 편입될 예정입니다. 지환 적층 가공 업체의 기술 변별력이 더욱 강조됩니다.",
-        perspective: "군용 전술 지환통의 신뢰성 가치가 정식 승인되어 가고 있음을 보여주는 변화입니다. 수원지관산업은 60년이 넘는 오랜 축적 제조 가공 지표를 기반으로, 어떤 국방 조달 입찰 및 규격 세분화 요구사항 사항에도 안전 규격을 만족할 수 있는 만반의 준비를 유지합니다."
-      }
-    ];
-
-    setArticles([mockFeed[0], ...articles]);
-    showNotification("RSS API & AI 요약봇 모듈 시뮬레이션: 1건 수신 성공!");
   };
   const filteredArticles = articles.filter(art => {
     // 1. Tab filter
@@ -907,7 +623,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                 {language === "ko" && (
                   <>
                     국내외 방산 산업의 주요 흐름과 군수품 포장 시장의 변화를 정리하는 수원지관산업의 산업 뉴스 페이지입니다.
-                    탄약 포장용 지환통 전문 제조기업으로서, K-방산 산업의 변화, 탄약 수요, 군수품 보관·수송·포장 기술의 흐름을 
+                    탄약지환통 전문 제조기업으로서, K-방산 산업의 변화, 탄약 수요, 군수품 보관·수송·포장 기술의 흐름을 
                     지속적으로 관찰하고 실질 동향에 대응합니다.
                   </>
                 )}
@@ -1041,22 +757,22 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                       </div>
                     </div>
 
-                    {/* Developer RSS Simulator shortcut buttons */}
+                    {/* Data sync and reset shortcut buttons */}
                     <div className="mt-1 border-t border-military-800 pt-2 flex flex-col gap-1 font-sans">
                       <button 
-                        onClick={simulateAPIImport}
+                        onClick={() => syncWithGoogleSheet(false)}
+                        disabled={isSyncingSheet}
                         className="w-full py-1 text-center bg-military-850 hover:bg-military-800 text-[10px] font-mono font-bold text-kraft-300 rounded border border-military-750/50 flex items-center justify-center gap-1 cursor-pointer"
                       >
-                        <Sparkles className="w-3 h-3 text-kraft-400" /> RSS / AI 요약 시뮬레이터
+                        <RefreshCw className={`w-3 h-3 text-kraft-400 ${isSyncingSheet ? 'animate-spin' : ''}`} /> 
+                        구글 시트 팩트 뉴스 즉시 동기화
                       </button>
-                      {articles.length !== initialArticles.length && (
-                        <button 
-                          onClick={resetToDefault}
-                          className="w-full text-center text-[9.5px] text-gray-400 hover:text-gray-300 border border-dashed border-military-800 py-0.5 rounded cursor-pointer"
-                        >
-                          품질 데이터 초기화 복구
-                        </button>
-                      )}
+                      <button 
+                        onClick={resetToDefault}
+                        className="w-full text-center text-[9.5px] text-gray-400 hover:text-gray-300 border border-dashed border-military-800 py-0.5 rounded cursor-pointer"
+                      >
+                        기본 팩트 데이터로 초기화
+                      </button>
                     </div>
                   </div>
                 </>
@@ -1703,7 +1419,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                       type="text"
                       value={formTitle}
                       onChange={(e) => setFormTitle(e.target.value)}
-                      placeholder="K-방산 글로벌 수요 급증 및 지환통 연계 검증 완료..."
+                      placeholder="K-방산 글로벌 수요 급증 및 탄약지환통 연계 검증 완료..."
                       className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600"
                       required
                     />

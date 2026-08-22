@@ -657,29 +657,31 @@ export function parseSheetRowsToNews(headers: string[], rows: any[][]): DefenseN
     return normHeaders.findIndex(h => keywords.some(k => h.includes(k.toLowerCase())));
   };
 
-  const colDate = findCol(["일자", "날짜", "date", "작성일", "등록일", "시간", "time"]);
-  const colTitle = findCol(["기사제목", "제목", "title", "뉴스제목", "헤드라인", "headline"]);
-  const colSource = findCol(["언론사", "출처", "source", "미디어", "매체", "신문사", "기관"]);
-  const colSummary = findCol(["요약", "기사요약", "summary", "개요", "줄거리"]);
-  const colBody = findCol(["본문", "상세요약", "body", "내용", "본문내용", "상세내용", "content"]);
-  const colUrl = findCol(["링크", "url", "원문", "기사링크", "기사url", "link"]);
-  const colCategory = findCol(["분류", "카테고리", "category", "주제", "섹션", "구분"]);
-  const colImage = findCol(["이미지", "사진", "image", "img", "썸네일", "thumbnail"]);
-  const colCore = findCol(["핵심", "핵심요약", "core", "keypoint", "쟁점", "포인트"]);
-  const colPerspective = findCol(["수원지관", "시사점", "제조관점", "perspective", "논평", "코멘트", "지관관점"]);
+  const colDate = findCol(["기록일자", "일자", "날짜", "date", "게시일"]);
+  const colTab = findCol(["대분류", "탭구분", "tab", "탭", "구분"]);
+  const colCategory = findCol(["세부사양", "카테고리", "category", "분류"]);
+  const colTitle = findCol(["뉴스제목", "기사제목", "제목", "title", "헤드라인"]);
+  const colSource = findCol(["기사출처", "출처", "source", "언론사", "매체"]);
+  const colUrl = findCol(["원문링크", "링크주소", "url", "링크", "원문", "link"]);
+  const colImage = findCol(["대표이미지", "이미지", "사진", "image", "img"]);
+  const colSummary = findCol(["카드노출요약", "요약(3줄", "요약", "summary", "개요"]);
+  const colCore = findCol(["핵심인텔리전스", "핵심요약", "core", "핵심", "쟁점"]);
+  const colBody = findCol(["상세분석", "설명본문", "본문", "body", "내용", "상세"]);
+  const colPerspective = findCol(["수원지관산업", "제조·공학", "제조관점", "코멘트", "perspective", "관점", "논평"]);
 
   return rows.map((row, idx) => {
     // Extract raw values with fallback
-    const rawDate = colDate >= 0 ? String(row[colDate] || "") : "";
-    const rawTitle = colTitle >= 0 ? String(row[colTitle] || "") : "";
-    const rawSource = colSource >= 0 ? String(row[colSource] || "") : "K-방산 뉴스 모니터링";
-    const rawSummary = colSummary >= 0 ? String(row[colSummary] || "") : "";
-    const rawBody = colBody >= 0 ? String(row[colBody] || "") : "";
-    const rawUrl = colUrl >= 0 ? String(row[colUrl] || "") : "";
-    const rawCategory = colCategory >= 0 ? String(row[colCategory] || "") : "국내 방산기업";
-    const rawImage = colImage >= 0 ? String(row[colImage] || "") : "";
-    const rawCore = colCore >= 0 ? String(row[colCore] || "") : "";
-    const rawPerspective = colPerspective >= 0 ? String(row[colPerspective] || "") : "";
+    const rawDate = colDate >= 0 ? String(row[colDate] || "") : String(row[0] || "");
+    const rawTab = colTab >= 0 ? String(row[colTab] || "") : String(row[1] || "");
+    const rawCategory = colCategory >= 0 ? String(row[colCategory] || "") : String(row[2] || "");
+    const rawTitle = colTitle >= 0 ? String(row[colTitle] || "") : String(row[3] || "");
+    const rawSource = colSource >= 0 ? String(row[colSource] || "") : String(row[4] || "");
+    const rawUrl = colUrl >= 0 ? String(row[colUrl] || "") : String(row[5] || "");
+    const rawImage = colImage >= 0 ? String(row[colImage] || "") : String(row[6] || "");
+    const rawSummary = colSummary >= 0 ? String(row[colSummary] || "") : String(row[7] || "");
+    const rawCore = colCore >= 0 ? String(row[colCore] || "") : String(row[8] || "");
+    const rawBody = colBody >= 0 ? String(row[colBody] || "") : String(row[9] || "");
+    const rawPerspective = colPerspective >= 0 ? String(row[colPerspective] || "") : String(row[10] || "");
 
     // Skip completely empty rows
     if (!rawTitle && !rawSummary && !rawBody) {
@@ -705,37 +707,38 @@ export function parseSheetRowsToNews(headers: string[], rows: any[][]): DefenseN
 
     // Determine tab and category
     let tab: "suwon" | "domestic" | "global" = "domestic";
+    const lowerTab = rawTab.toLowerCase();
     const lowerCat = rawCategory.toLowerCase();
     const lowerTitle = rawTitle.toLowerCase();
-    if (lowerCat.includes("수원") || lowerTitle.includes("수원지관")) {
+    if (lowerTab.includes("suwon") || lowerTab.includes("수원") || lowerCat.includes("수원") || lowerTitle.includes("수원지관")) {
       tab = "suwon";
-    } else if (lowerCat.includes("글로벌") || lowerCat.includes("해외") || lowerCat.includes("nato") || lowerCat.includes("미국") || lowerCat.includes("유럽") || lowerCat.includes("global")) {
+    } else if (lowerTab.includes("glob") || lowerTab.includes("해외") || lowerTab.includes("글로벌") || lowerCat.includes("글로벌") || lowerCat.includes("해외") || lowerCat.includes("nato") || lowerCat.includes("미국") || lowerCat.includes("유럽")) {
       tab = "global";
     } else {
       tab = "domestic";
     }
 
-    // Default high-grade Unsplash image by topic
-    let finalImageUrl = rawImage.trim();
-    if (!finalImageUrl || !finalImageUrl.startsWith("http")) {
-      if (tab === "suwon") {
-        finalImageUrl = "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80";
-      } else if (tab === "global") {
-        finalImageUrl = "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=600&q=80";
-      } else if (lowerTitle.includes("포탄") || lowerTitle.includes("탄약") || lowerTitle.includes("155")) {
-        finalImageUrl = "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=600&q=80";
-      } else {
-        finalImageUrl = "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80";
-      }
+    // Default high-grade defense industry fallback images if omitted in sheet
+    let defaultImg = "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=600&q=80";
+    if (rawTitle.includes("배터리") || rawTitle.includes("LG") || rawTitle.includes("드론")) {
+      defaultImg = "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80";
+    } else if (rawTitle.includes("신관") || rawTitle.includes("유도") || rawTitle.includes("미사일")) {
+      defaultImg = "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80";
+    } else if (rawTitle.includes("일본") || rawTitle.includes("정책") || rawTitle.includes("전망") || rawTitle.includes("딜로이트")) {
+      defaultImg = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80";
+    } else if (rawTitle.includes("NCAGE") || rawTitle.includes("코드") || rawTitle.includes("공급망")) {
+      defaultImg = "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=600&q=80";
+    } else if (rawTitle.includes("장갑차") || rawTitle.includes("XM30")) {
+      defaultImg = "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=600&q=80";
+    } else if (rawTitle.includes("ADD") || rawTitle.includes("국방과학") || rawTitle.includes("보안")) {
+      defaultImg = "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80";
     }
 
-    // Default high-context manufacturing perspective if omitted in spreadsheet
-    const finalPerspective = rawPerspective.trim() || 
-      "탄약 생산과 공급이 확대될수록 탄약의 보관, 수송, 취급 과정에서 포장재의 역할은 더욱 중요해집니다. 수원지관산업의 60년 방산규격 지환통 가공 및 고도 방습 코팅 원천 기술은 추진제와 화약의 장기 야전 보존 신뢰성을 완벽하게 보장합니다.";
-
+    const finalImageUrl = (rawImage && (rawImage.startsWith("http://") || rawImage.startsWith("https://"))) ? rawImage.trim() : defaultImg;
     const finalSummary = rawSummary.trim() || rawBody.slice(0, 120) || rawTitle;
     const finalCore = rawCore.trim() || finalSummary.slice(0, 80);
     const finalBody = rawBody.trim() || rawSummary || rawTitle;
+    const finalPerspective = rawPerspective.trim();
 
     const item: DefenseNewsSheetRow = {
       id: `news-sheet-${cleanDate.replace(/-/g, '')}-${idx + 1}`,
@@ -745,7 +748,7 @@ export function parseSheetRowsToNews(headers: string[], rows: any[][]): DefenseN
       summary: finalSummary,
       source: rawSource.trim() || "K-방산 뉴스 모니터링",
       date: cleanDate,
-      url: rawUrl.trim() || "https://www.combat-packaging.com",
+      url: rawUrl.trim() || "https://kookbang.dema.mil.kr/",
       imageUrl: finalImageUrl,
       coreSummary: finalCore,
       bodyText: finalBody,
