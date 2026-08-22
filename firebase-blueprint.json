@@ -49,19 +49,90 @@
           "type": "string",
           "description": "Full technical description text paragraph"
         },
-        "createdAt": {
+        "isCustom": {
+          "type": "boolean",
+          "description": "Whether this item was created/customized by the admin"
+        },
+        "updatedAt": {
           "type": "string",
-          "format": "date-time",
-          "description": "Creation timestamp"
+          "description": "Last updated timestamp"
         }
       },
       "required": ["id", "name", "innerDia", "thickness", "length", "quantity", "condition", "approxPrice", "imageUrl"]
+    },
+    "DefenseNewsItem": {
+      "title": "DefenseNewsItem",
+      "description": "K-Defense news and intelligence articles",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique article ID"
+        },
+        "tab": {
+          "type": "string",
+          "description": "Category tab: suwon, domestic, or global"
+        },
+        "category": {
+          "type": "string",
+          "description": "Article subcategory name"
+        },
+        "title": {
+          "type": "string",
+          "description": "Article title headline"
+        },
+        "summary": {
+          "type": "string",
+          "description": "Short overview summary"
+        },
+        "source": {
+          "type": "string",
+          "description": "News source organization or outlet"
+        },
+        "date": {
+          "type": "string",
+          "description": "Publication date string (YYYY-MM-DD)"
+        },
+        "url": {
+          "type": "string",
+          "description": "External reference link"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Cover photo image URL"
+        },
+        "coreSummary": {
+          "type": "string",
+          "description": "Core takeaway bullet"
+        },
+        "bodyText": {
+          "type": "string",
+          "description": "Detailed article body content"
+        },
+        "perspective": {
+          "type": "string",
+          "description": "Suwon Paper Cone engineering and manufacturing viewpoint"
+        },
+        "isCustom": {
+          "type": "boolean",
+          "description": "True if created or customized by the admin to prevent overwrite"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last updated timestamp"
+        }
+      },
+      "required": ["id", "tab", "category", "title", "summary", "source", "date", "url"]
     }
   },
   "firestore": {
     "/stocks/{stockId}": {
       "schema": "StockItem",
       "description": "Global custom stock items collection synced in real-time"
+    },
+    "/defense_news/{newsId}": {
+      "schema": "DefenseNewsItem",
+      "description": "Defense news articles synchronized across admin consoles"
     }
   }
 }

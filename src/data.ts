@@ -36,7 +36,7 @@ export const productData: ProductItem[] = [
     englishName: "Ammunition Fiberboard Paper Tubes",
     badge: "방위산업 지정물자",
     category: "defense",
-    summary: "밀폐, 방습, 고압축 설계로 장기 보관 및 격렬한 탄약 운송을 안전하게 보호하는 전군 납품용 특수 지관.",
+    summary: "밀폐, 방습, 고압축 설계로 장기 보관 및 격렬한 탄약 운송을 안전하게 보호하는 전군 납품용 특수 탄약지환통.",
     description: "MIL-SPEC(미군수 표준 규격 및 국방 규격) 표준을 완벽히 충족하며, 국방과학연구소(ADD)와 공동으로 국산화 및 혁신 개발에 참여하여 1975년 방위산업물자로 지정을 취득한 이래 전군에 무장 필수 보호 패키지로 공급해오고 있는 고기술 탄약지환통입니다. 극한의 환경에서의 습기 유입을 차단하고 격렬한 야지 수송 과정 중 완벽한 물리적 강도로 정밀 기폭 원자재를 보호합니다.",
     features: [
       "방수/방습 차단막 다중 설계 (내벽 방습 알루미늄 배리어 및 왁스 임프레그네이션)",
@@ -54,7 +54,7 @@ export const productData: ProductItem[] = [
     imageUrl: "https://images.unsplash.com/photo-1616401784845-180882ba9ba8?auto=format&fit=crop&q=80&w=800",
     structureLayers: [
       { name: "내벽 배리어 (Melt Lamination)", desc: "기밀 유지를 통해 습기 및 염도 침투를 원천 차단하는 이중 레이어", color: "bg-slate-300" },
-      { name: "핵심 지관부 (High-Wall Core)", desc: "정밀 압축을 위해 대각선 나선 와인딩한 친환경 고강도 파이버보드 펄프", color: "bg-amber-100" },
+      { name: "핵심 탄약지환통 벽체 (High-Wall Core)", desc: "정밀 압축을 위해 대각선 나선 와인딩한 친환경 고강도 파이버보드 펄프", color: "bg-amber-100" },
       { name: "방습 결합부 (Intermediate Wax Film)", desc: "고열 가용 왁싱 기법으로 다중 레이어 사이에 완전 방습막을 균형 형성", color: "bg-amber-200" },
       { name: "최외곽 가죽질 지층 (Outer Protective Shell)", desc: "낙하 충격 분산과 습기 차단을 완성하는 고함량 발수 피막 가공", color: "bg-amber-700" }
     ]
@@ -161,7 +161,7 @@ export const facilityData: FacilityItem[] = [
   {
     id: "facility-2",
     title: "내외벽 특수 왁스 침투 가마 (Wax Impregnation System)",
-    description: "탄약 포장의 군사 방수 규격에 따른 완벽 성비 극대화를 위해 섭씨 120도의 고온 조건 하에서 특수 합성수지계 발수 왁스를 지원지관 벽부 깊숙이 기밀 진공 침착시켜 우수를 물리치고 원자재 기밀을 반영구 보장합니다.",
+    description: "탄약 포장의 군사 방수 규격에 따른 완벽 성비 극대화를 위해 섭씨 120도의 고온 조건 하에서 특수 합성수지계 발수 왁스를 탄약지환통 벽부 깊숙이 기밀 진공 침착시켜 우수를 물리치고 원자재 기밀을 반영구 보장합니다.",
     imageUrl: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&q=80&w=800"
   },
   {

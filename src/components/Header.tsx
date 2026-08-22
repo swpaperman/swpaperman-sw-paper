@@ -4,9 +4,10 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Menu, X, ChevronRight } from "lucide-react";
+import { Menu, X, ChevronRight, ShieldCheck, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useLanguage } from "../context/LanguageContext";
+import { useAdmin } from "../context/AdminContext";
 import { TranslationSchema } from "../lib/translations";
 
 interface HeaderProps {
@@ -38,6 +39,7 @@ export default function Header({ activeTab, setActiveTab }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [logoIndex, setLogoIndex] = useState(0);
   const { language, setLanguage, t } = useLanguage();
+  const { isAdmin, openLoginModal, logoutAdmin } = useAdmin();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -166,8 +168,8 @@ export default function Header({ activeTab, setActiveTab }: HeaderProps) {
             })}
           </nav>
 
-          {/* Separate Right-aligned Language Selection Block (Prevents overlap with menus) */}
-          <div className="hidden min-[1025px]:flex items-center shrink-0">
+          {/* Separate Right-aligned Language Selection & Admin Auth Block */}
+          <div className="hidden min-[1025px]:flex items-center gap-2 shrink-0">
             <div className={`flex rounded-lg p-0.5 border transition-colors duration-300 ${
               scrolled 
                 ? "bg-gray-100 border-gray-200" 
@@ -191,10 +193,47 @@ export default function Header({ activeTab, setActiveTab }: HeaderProps) {
                 </button>
               ))}
             </div>
+
+            {/* Admin status pill */}
+            {isAdmin ? (
+              <button
+                id="header-admin-active-btn"
+                onClick={openLoginModal}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-400/40 text-[11px] font-extrabold tracking-tight transition"
+                title="관리자 모드 활성 (클릭 시 관리자 설정)"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden xl:inline">{language === "ko" ? "관리자 모드" : "Admin"}</span>
+              </button>
+            ) : (
+              <button
+                id="header-admin-login-btn"
+                onClick={openLoginModal}
+                className={`p-1.5 rounded-lg text-xs transition border cursor-pointer ${
+                  scrolled
+                    ? "text-gray-400 hover:text-gray-700 hover:bg-gray-100 border-transparent"
+                    : "text-white/40 hover:text-white hover:bg-white/10 border-transparent"
+                }`}
+                title={language === "ko" ? "관리자 로그인" : "Admin Login"}
+              >
+                <Lock className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           {/* Mobile/Tablet/Notebook < 1025px UI Button interface */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0 min-[1025px]:hidden">
+            {/* Admin pill on mobile if logged in */}
+            {isAdmin && (
+              <button
+                onClick={openLoginModal}
+                className="flex items-center gap-1 px-2 py-1 rounded bg-emerald-600/30 text-emerald-300 text-[10px] font-bold border border-emerald-400/30"
+              >
+                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                <span>관리자</span>
+              </button>
+            )}
+
             {/* Small inline Language choice */}
             <div className={`flex rounded-lg p-0.5 border ${
               scrolled 
@@ -267,6 +306,23 @@ export default function Header({ activeTab, setActiveTab }: HeaderProps) {
                   </button>
                 );
               })}
+
+              {/* Mobile Admin login / status link */}
+              <div className="pt-3 border-t border-gray-100 mt-2">
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    openLoginModal();
+                  }}
+                  className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-50 transition"
+                >
+                  <span className="flex items-center gap-2">
+                    <ShieldCheck className={`w-4 h-4 ${isAdmin ? "text-emerald-600" : "text-gray-400"}`} />
+                    {isAdmin ? (language === "ko" ? "관리자 콘솔 모드 (활성)" : "Admin Console (Active)") : (language === "ko" ? "관리자 로그인" : "Admin Login")}
+                  </span>
+                  <span className="text-[10px] text-gray-400">{isAdmin ? "설정/로그아웃" : "접속"}</span>
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

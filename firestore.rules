@@ -6,9 +6,30 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Stocks collection is visible to everyone, and open to updates to allow multi-device administration
+    // Stocks collection
     match /stocks/{stockId} {
+      allow read, write: if true;
+    }
+
+    // Defense News collection
+    match /defense_news/{newsId} {
+      allow read, write: if true;
+    }
+
+    // General News collection alias
+    match /news/{newsId} {
+      allow read, write: if true;
+    }
+
+    // Inquiries and quote requests
+    match /inquiries/{inquiryId} {
+      allow read, write: if true;
+    }
+
+    // Global admin settings & metadata
+    match /admin_settings/{settingId} {
       allow read, write: if true;
     }
   }
 }
+

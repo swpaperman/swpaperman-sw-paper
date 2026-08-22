@@ -468,8 +468,6 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
           </div>
         )}
 
-
-
         {/* Detailed Copy & Warning Layout */}
         <div className="max-w-5xl mx-auto space-y-8 text-left leading-relaxed mb-16">
           <div className="border-b border-gray-150 pb-6 mb-6">
@@ -488,7 +486,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
             </p>
             <p className="text-gray-655">
               {language === "ko" 
-                ? "원지 투입 및 지관 성형, 방습 처리, 정밀 절단, 금속 플랜지 및 칼라 조립, 보호 캡 조립에 이르는 제조 공정을 통해 탄약의 장기 저장성과 운송 안정성을 높이는 탄약지환통을 제작합니다."
+                ? "원지 투입 및 탄약지환통 성형, 방습 처리, 정밀 절단, 금속 플랜지 및 칼라 조립, 보호 캡 조립에 이르는 제조 공정을 통해 탄약의 장기 저장성과 운송 안정성을 높이는 탄약지환통을 제작합니다."
                 : language === "tr"
                   ? "Karton besleme, helisel sarım, nem koruyucu kaplama, dairesel dilimleme ve metal/plastik sızdırmaz kapak montaj adımları ile mühimmatın açık havada saklama ömrünü uzatıyoruz."
                   : "Our strict manufacturing pipeline (wrapping, humidity wax barriers, high-speed cutting, and airtight metallic cap assembly) assures excellent storage stamina for extreme military logistical fields."}
@@ -518,7 +516,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
               </span>
               <p className="text-[11px] sm:text-xs text-amber-800 leading-relaxed font-light">
                 {language === "ko"
-                  ? "본 탄약지환통 제품군은 일반 구매 상담이 가능한 포장용 지관(빈 용기)으로 전개됩니다. 안전 거래 및 관련 규정 준출 등 법적 오해가 발생하지 않기를 바라며, 오직 “사용 목적 및 규격 확인 후 공급 상담” 방식으로 정해진 수주 절차 계약에 의거하여 견적 및 납품 공급 상담을 진행합니다."
+                  ? "본 탄약지환통 제품군은 일반 구매 상담이 가능한 포장용 탄약지환통(빈 용기)으로 전개됩니다. 안전 거래 및 관련 규정 준출 등 법적 오해가 발생하지 않기를 바라며, 오직 “사용 목적 및 규격 확인 후 공급 상담” 방식으로 정해진 수주 절차 계약에 의거하여 견적 및 납품 공급 상담을 진행합니다."
                   : language === "tr"
                     ? "Burada sergilenen mühimmat koruyucu ambalaj tüpleri, iç kısmı tamamen boş olan ambalaj malzemeleridir. Herhangi bir yasal yanlış anlaşılmayı önlemek amacıyla; siparişleriniz ve ortaklık talepleriniz sadece resmi B2B teklif usulü ve ticari ambalaj tedariki anlaşmaları kapsamında değerlendirilir."
                     : "Ammunition fiber tubes displayed in this web catalog are shipped as empty hollow packaging containers. To eliminate regulatory misunderstandings, all quotes and sales agreements are transacted exclusively under institutional B2B contract terms for tactical logistics overpack shipping materials."}
@@ -555,7 +553,7 @@ export default function AmmunitionView({ onTabChange, onQuotePrefill, hideHeader
               <span className="text-2.5xl font-black text-kraft-100 tracking-tight block mt-1">50+ Years</span>
               <p className="text-[12px] text-military-150 mt-2 font-medium leading-relaxed text-gray-200/95">
                 {language === "ko" 
-                  ? "반세기 동안 축적해 온 독보적인 고강도 방습 나선 지관 제조 원제 제어 기조" 
+                  ? "반세기 동안 축적해 온 독보적인 고강도 방습 나선 탄약지환통 제조 원제 제어 기조" 
                   : "Over 50 years of robust military packaging R&D and serial manufacturing excellence."}
               </p>
             </div>

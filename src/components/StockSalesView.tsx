@@ -33,6 +33,7 @@ import {
   CheckSquare
 } from "lucide-react";
 import { useLanguage } from "../context/LanguageContext";
+import { useAdmin } from "../context/AdminContext";
 import { trackProductView, trackCTAClick } from "../lib/ga4";
 import { getAccessToken, googleSignIn, uploadStockImageToDrive, db } from "../lib/googleWorkspace";
 import { collection, onSnapshot, doc, setDoc, deleteDoc, getDocs } from "firebase/firestore";
@@ -54,6 +55,7 @@ interface StockItem {
   imageUrl: string;
   imageUrls?: string[];
   desc?: string;
+  isCustom?: boolean;
 }
 
 const DEFAULT_STOCKS: StockItem[] = [
@@ -71,7 +73,7 @@ const DEFAULT_STOCKS: StockItem[] = [
   },
   {
     id: "STK-002",
-    name: "탄약 포장용 지환통 시생산 잔여품 (밀봉캡 미조립)",
+    name: "탄약 포장용 탄약지환통 시생산 잔여품 (밀봉캡 미조립)",
     innerDia: "81.0mm",
     thickness: "6.0mm",
     length: "480mm",
@@ -119,6 +121,38 @@ const DEFAULT_STOCKS: StockItem[] = [
   }
 ];
 
+const LOCAL_CUSTOM_STOCKS_KEY = "suwon_custom_stocks_backup";
+
+const getSavedCustomStocks = (): Record<string, StockItem> => {
+  try {
+    const raw = localStorage.getItem(LOCAL_CUSTOM_STOCKS_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+};
+
+const saveCustomStockItem = (item: StockItem) => {
+  try {
+    const current = getSavedCustomStocks();
+    current[item.id] = { ...item, isCustom: true };
+    localStorage.setItem(LOCAL_CUSTOM_STOCKS_KEY, JSON.stringify(current));
+  } catch (err) {
+    console.warn("Could not save custom stock to local storage:", err);
+  }
+};
+
+const removeCustomStockItem = (id: string) => {
+  try {
+    const current = getSavedCustomStocks();
+    delete current[id];
+    localStorage.setItem(LOCAL_CUSTOM_STOCKS_KEY, JSON.stringify(current));
+  } catch (err) {
+    console.warn("Could not remove custom stock from local storage:", err);
+  }
+};
+
 const IMAGE_PRESETS = [
   { name: "기본 크라프트 포장 지관", nameEng: "Plain Kraft Packing Core", url: "https://images.unsplash.com/photo-1589793907316-f9d994350c3e?auto=format&fit=crop&q=80&w=650" },
   { name: "종합 지관 성형 라인", nameEng: "Spiral Core Molding Line", url: "https://lh3.googleusercontent.com/d/1njxhdAqPbEjmGDx5oRBW2Q2k6FjRu05q" },
@@ -130,6 +164,7 @@ const IMAGE_PRESETS = [
 
 export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSalesViewProps) {
   const { language, t } = useLanguage();
+  const { isAdmin, setIsAdminLoginOpen, logoutAdmin } = useAdmin();
   
   const [stocks, setStocks] = useState<StockItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -138,12 +173,6 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
   
   // Immersive interactive details modal state
   const [selectedStock, setSelectedStock] = useState<StockItem | null>(null);
-
-  // Administrator Mode State
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [showPasscodeModal, setShowPasscodeModal] = useState(false);
-  const [passcode, setPasscode] = useState("");
-  const [passcodeError, setPasscodeError] = useState("");
 
   // Sub-navigation for Administrator mode
   const [adminSubView, setAdminSubView] = useState<"list" | "register">("list");
@@ -160,38 +189,68 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
       async (snapshot) => {
         if (!isMounted) return;
 
+        const customBackupMap = getSavedCustomStocks();
+
         if (snapshot.empty) {
-          // If Firestore is confirmed completely empty on the server, seed the defaults
+          // If Firestore is confirmed completely empty on the server, seed defaults merged with custom backups
+          const initialList = DEFAULT_STOCKS.map(item => {
+            if (customBackupMap[item.id]) {
+              return customBackupMap[item.id];
+            }
+            return item;
+          });
+
+          // Add any newly registered custom items from backup
+          Object.values(customBackupMap).forEach(customItem => {
+            if (!initialList.some(i => i.id === customItem.id)) {
+              initialList.push(customItem);
+            }
+          });
+
           if (!snapshot.metadata.fromCache) {
             try {
               await Promise.all(
-                DEFAULT_STOCKS.map((item) => setDoc(doc(db, "stocks", item.id), item))
+                initialList.map((item) => setDoc(doc(db, "stocks", item.id), item))
               );
             } catch (err) {
               console.error("Failed to seed default stocks to Firestore:", err);
             }
-          } else {
-            // If empty but from cache (still connecting), keep showing defaults so it's not a blank page
-            setStocks(DEFAULT_STOCKS);
           }
+          setStocks(initialList);
         } else {
           const list: StockItem[] = [];
           snapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            list.push({
-              id: docSnap.id,
-              name: data.name || "",
-              innerDia: data.innerDia || "",
-              thickness: data.thickness || "",
-              length: data.length || "",
-              quantity: data.quantity || "",
-              condition: data.condition || "우수",
-              approxPrice: data.approxPrice || "상담 협의",
-              imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1589793907316-f9d994350c3e?auto=format&fit=crop&q=80&w=650",
-              imageUrls: data.imageUrls || [],
-              desc: data.desc || ""
-            });
+            const id = docSnap.id;
+            // If there is an admin-modified custom backup in local storage, protect it
+            const customBackup = customBackupMap[id];
+            if (customBackup && (customBackup.isCustom || data.isCustom)) {
+              list.push({ ...customBackup, ...data, isCustom: true });
+            } else {
+              list.push({
+                id: docSnap.id,
+                name: data.name || "",
+                innerDia: data.innerDia || "",
+                thickness: data.thickness || "",
+                length: data.length || "",
+                quantity: data.quantity || "",
+                condition: data.condition || "우수",
+                approxPrice: data.approxPrice || "상담 협의",
+                imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1589793907316-f9d994350c3e?auto=format&fit=crop&q=80&w=650",
+                imageUrls: data.imageUrls || [],
+                desc: data.desc || "",
+                isCustom: data.isCustom || false
+              });
+            }
           });
+
+          // Also merge any offline custom items not yet in Firestore
+          Object.values(customBackupMap).forEach(customItem => {
+            if (!list.some(i => i.id === customItem.id)) {
+              list.unshift(customItem);
+            }
+          });
+
           // Sort stock items by ID so they stay structured beautifully
           list.sort((a, b) => a.id.localeCompare(b.id));
           setStocks(list);
@@ -200,18 +259,20 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
       },
       (error) => {
         console.error("Firestore loading error:", error);
-        // Fallback to DEFAULT_STOCKS in case of rules/network failure so the app doesn't break
+        // Fallback to DEFAULT_STOCKS merged with custom backup
         if (isMounted) {
-          setStocks(DEFAULT_STOCKS);
+          const customBackupMap = getSavedCustomStocks();
+          const fallbackList = DEFAULT_STOCKS.map(item => customBackupMap[item.id] || item);
+          Object.values(customBackupMap).forEach(customItem => {
+            if (!fallbackList.some(i => i.id === customItem.id)) {
+              fallbackList.unshift(customItem);
+            }
+          });
+          setStocks(fallbackList);
           setIsLoading(false);
         }
       }
     );
-
-    const sessionAdmin = sessionStorage.getItem("suwon_admin_auth");
-    if (sessionAdmin === "true") {
-      setIsAdmin(true);
-    }
 
     return () => {
       isMounted = false;
@@ -624,27 +685,6 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
     }
   };
 
-  const handleVerifyPasscode = (e: React.FormEvent) => {
-    e.preventDefault();
-    const storedPass = localStorage.getItem("suwon_admin_passcode") || "swpaper7638**";
-    if (passcode === storedPass) {
-      setIsAdmin(true);
-      sessionStorage.setItem("suwon_admin_auth", "true");
-      setShowPasscodeModal(false);
-      setPasscode("");
-      setPasscodeError("");
-      alert(language === "ko" ? "관리자 권한이 정상 부여되었습니다!" : "Admin Privileges Granted!");
-    } else {
-      setPasscodeError(language === "ko" ? "암호가 올바르지 않습니다." : "Wrong passcode credentials.");
-    }
-  };
-
-  const handleLogoutAdmin = () => {
-    setIsAdmin(false);
-    sessionStorage.removeItem("suwon_admin_auth");
-    alert(language === "ko" ? "보안 세션이 종료되었습니다." : "Logged out from master console session.");
-  };
-
   const openAddModal = () => {
     const nextNum = stocks.length + 1;
     setFormId(`STK-${String(nextNum).padStart(3, "0")}`);
@@ -691,15 +731,18 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
       approxPrice: formApproxPrice || "상담 협의",
       imageUrl: formImageUrl || "https://images.unsplash.com/photo-1589793907316-f9d994350c3e?auto=format&fit=crop&q=80&w=650",
       imageUrls: formImageUrls || [],
-      desc: formDesc || `${formName} 제품에 대한 상세한 현물 대응 긴급 수권 지관 정보입니다.`
+      desc: formDesc || `${formName} 제품에 대한 상세한 현물 대응 긴급 수권 지관 정보입니다.`,
+      isCustom: true
     };
+    saveCustomStockItem(newStock);
     try {
       await setDoc(doc(db, "stocks", newStock.id), newStock);
       setShowAddModal(false);
       alert(language === "ko" ? "자재가 정상 등록되었습니다." : "Product successfully categorized.");
     } catch (err) {
       console.error("Error creating stock:", err);
-      alert(language === "ko" ? "자재 등록에 실패했습니다." : "Failed to register product.");
+      setShowAddModal(false);
+      alert(language === "ko" ? "자재가 로컬 저장소에 안전하게 등록되었습니다." : "Product registered locally.");
     }
   };
 
@@ -714,6 +757,7 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
       cancelText: language === "ko" ? "취소" : "Cancel",
       type: "danger",
       onConfirm: async () => {
+        removeCustomStockItem(id);
         try {
           await deleteDoc(doc(db, "stocks", id));
           if (selectedStock && selectedStock.id === id) {
@@ -721,6 +765,10 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
           }
         } catch (err) {
           console.error("Error deleting stock:", err);
+          setStocks(prev => prev.filter(item => item.id !== id));
+          if (selectedStock && selectedStock.id === id) {
+            setSelectedStock(null);
+          }
         }
       }
     });
@@ -745,15 +793,19 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
       approxPrice: formApproxPrice || "상담 협의",
       imageUrl: formImageUrl || "https://images.unsplash.com/photo-1589793907316-f9d994350c3e?auto=format&fit=crop&q=80&w=650",
       imageUrls: formImageUrls || [],
-      desc: formDesc || ""
+      desc: formDesc || "",
+      isCustom: true
     };
+    saveCustomStockItem(editedStock);
     try {
       await setDoc(doc(db, "stocks", formId), editedStock);
       setShowEditModal(false);
       setEditingIndex(null);
     } catch (err) {
       console.error("Error updating stock:", err);
-      alert(language === "ko" ? "수정에 실패했습니다." : "Failed to update product.");
+      setStocks(prev => prev.map(item => item.id === formId ? editedStock : item));
+      setShowEditModal(false);
+      setEditingIndex(null);
     }
   };
 
@@ -990,7 +1042,7 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                   {language === "ko" ? "마스터 연동 활성" : "Authorized Admin Active"}
                 </span>
                 <button 
-                  onClick={handleLogoutAdmin}
+                  onClick={logoutAdmin}
                   className="text-[10px] bg-gray-200 hover:bg-gray-300 transition-colors text-gray-700 px-2.5 py-1 rounded-full font-bold cursor-pointer ml-1 border-0"
                 >
                   {language === "ko" ? "보안 닫기" : "Log out"}
@@ -998,7 +1050,7 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
               </div>
             ) : (
               <button
-                onClick={() => setShowPasscodeModal(true)}
+                onClick={() => setIsAdminLoginOpen(true)}
                 className="flex items-center gap-1.5 border border-gray-200 hover:border-military-600 rounded-full py-1.5 px-4.5 text-xs text-gray-600 hover:text-military-900 transition-all cursor-pointer font-semibold shadow-2xs bg-white"
               >
                 <Settings className="w-3.5 h-3.5 text-gray-500" />
@@ -1619,75 +1671,7 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
         </div>
       )}
 
-      {/* 2. SECURITY ASSIGNMENT PASSCODE WALL DIALOG */}
-      {showPasscodeModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-military-950/65 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 text-left border border-gray-200 shadow-2xl relative text-gray-900 animate-in fade-in duration-200 font-normal">
-            <button 
-              onClick={() => {
-                setShowPasscodeModal(false);
-                setPasscode("");
-                setPasscodeError("");
-              }}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 cursor-pointer border-0 bg-transparent"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-
-            <div className="flex flex-col items-center text-center space-y-4 pt-2">
-              <div className="bg-military-50 p-3.5 rounded-2xl text-military-850 border border-military-100">
-                <Lock className="w-6 h-6 text-military-800" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-md sm:text-base font-bold text-gray-900">
-                  {language === "ko" ? "최고 권한자 보안 구역" : "Master Security Access"}
-                </h3>
-                <p className="text-[11px] text-gray-400 leading-normal font-light">
-                  {language === "ko" ? "수원지관 공장 대장 연동을 위한 패스코드를 입력해 주십시오." : "Please verify your master padlock key to continue."}
-                </p>
-              </div>
-
-              <form onSubmit={handleVerifyPasscode} className="w-full space-y-3 font-normal text-xs">
-                <input 
-                  type="password"
-                  value={passcode}
-                  required
-                  placeholder={language === "ko" ? "마스터 인증 암호" : "Passcode"}
-                  onChange={(e) => setPasscode(e.target.value)}
-                  className="w-full py-2.5 px-4 rounded-xl border border-gray-200 focus:border-military-600 outline-none text-center font-mono font-bold text-sm bg-gray-50 text-gray-950"
-                  autoFocus
-                />
-                
-                {passcodeError && (
-                  <span className="text-[10px] text-red-500 block font-semibold leading-none">{passcodeError}</span>
-                )}
-
-                <div className="flex gap-2 pt-2 text-xs font-bold">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowPasscodeModal(false);
-                      setPasscode("");
-                      setPasscodeError("");
-                    }}
-                    className="flex-1 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-500 text-xs transition-all cursor-pointer bg-white"
-                  >
-                    {language === "ko" ? "취소" : "Cancel"}
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-2.5 rounded-xl bg-military-850 hover:bg-military-900 text-white text-xs transition-all cursor-pointer border-0 bg-military-850 font-bold"
-                  >
-                    {language === "ko" ? "보안 로그인" : "Verify Key"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 3. ADMIN ADD STOCK MODAL */}
+      {/* 2. ADMIN ADD STOCK MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-military-950/65 backdrop-blur-xs flex items-center justify-center p-4">
           <form 

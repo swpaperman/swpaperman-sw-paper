@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { collection, doc, setDoc, deleteDoc, onSnapshot, getDocs } from "firebase/firestore";
+import { db } from "./googleWorkspace";
+
 export interface DefenseNewsItem {
   id: string;
   tab: "suwon" | "domestic" | "global";
@@ -16,6 +19,8 @@ export interface DefenseNewsItem {
   coreSummary: string;
   bodyText: string;
   perspective: string;
+  isCustom?: boolean;
+  updatedAt?: string;
 }
 
 export const DEFAULT_DEFENSE_NEWS: DefenseNewsItem[] = [
@@ -189,15 +194,86 @@ export const DEFAULT_DEFENSE_NEWS: DefenseNewsItem[] = [
   }
 ];
 
+const LOCAL_STORAGE_KEY = "sw_defense_news";
+const LOCAL_CUSTOM_NEWS_KEY = "sw_defense_custom_news_map";
+
+// Helper to get custom news overrides map from localStorage
+export function getLocalCustomNewsMap(): Record<string, DefenseNewsItem> {
+  try {
+    const raw = localStorage.getItem(LOCAL_CUSTOM_NEWS_KEY);
+    if (raw) {
+      return JSON.parse(raw);
+    }
+  } catch {
+    // ignore
+  }
+  return {};
+}
+
+// Helper to save a single custom news override to localStorage
+export function saveLocalCustomNews(item: DefenseNewsItem): void {
+  try {
+    const map = getLocalCustomNewsMap();
+    map[item.id] = { ...item, isCustom: true, updatedAt: new Date().toISOString() };
+    localStorage.setItem(LOCAL_CUSTOM_NEWS_KEY, JSON.stringify(map));
+  } catch (err) {
+    console.warn("Failed to save custom news map locally:", err);
+  }
+}
+
+// Helper to remove custom news override
+export function removeLocalCustomNews(id: string): void {
+  try {
+    const map = getLocalCustomNewsMap();
+    delete map[id];
+    localStorage.setItem(LOCAL_CUSTOM_NEWS_KEY, JSON.stringify(map));
+  } catch (err) {
+    console.warn("Failed to remove custom news map locally:", err);
+  }
+}
+
+/**
+ * Merges base items with custom items and Firestore items cleanly:
+ * - Admin custom items (isCustom = true) ALWAYS take precedence and are NEVER overwritten.
+ * - Base items are included unless explicitly overridden.
+ */
+export function mergeNewsSafely(
+  baseList: DefenseNewsItem[],
+  customMap: Record<string, DefenseNewsItem>,
+  firestoreList: DefenseNewsItem[] = []
+): DefenseNewsItem[] {
+  const resultMap = new Map<string, DefenseNewsItem>();
+
+  // 1. Add base list
+  baseList.forEach((item) => {
+    resultMap.set(item.id, item);
+  });
+
+  // 2. Overlay firestore list
+  firestoreList.forEach((item) => {
+    resultMap.set(item.id, item);
+  });
+
+  // 3. Overlay local admin custom map (Highest precedence)
+  Object.values(customMap).forEach((customItem) => {
+    resultMap.set(customItem.id, customItem);
+  });
+
+  const list = Array.from(resultMap.values());
+  return list.sort((a, b) => b.date.localeCompare(a.date));
+}
+
 export function getStoredDefenseNews(): DefenseNewsItem[] {
   try {
-    const raw = localStorage.getItem("sw_defense_news");
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const customMap = getLocalCustomNewsMap();
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+        return mergeNewsSafely(parsed, customMap);
       }
     }
+    return mergeNewsSafely(DEFAULT_DEFENSE_NEWS, customMap);
   } catch (e) {
     console.warn("Failed to load defense news from localStorage:", e);
   }
@@ -206,10 +282,46 @@ export function getStoredDefenseNews(): DefenseNewsItem[] {
 
 export function saveDefenseNewsToStorage(news: DefenseNewsItem[]): void {
   try {
-    localStorage.setItem("sw_defense_news", JSON.stringify(news));
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(news));
     localStorage.setItem("sw_defense_last_sync_time", new Date().toLocaleTimeString());
   } catch (e) {
     console.warn("Failed to save defense news to localStorage:", e);
+  }
+}
+
+/**
+ * Saves an article to Firestore and local storage simultaneously.
+ */
+export async function saveDefenseNewsItem(article: DefenseNewsItem): Promise<void> {
+  const itemToSave: DefenseNewsItem = {
+    ...article,
+    isCustom: true,
+    updatedAt: new Date().toISOString()
+  };
+
+  // 1. Save locally
+  saveLocalCustomNews(itemToSave);
+
+  // 2. Save to Firestore
+  try {
+    await setDoc(doc(db, "defense_news", itemToSave.id), itemToSave);
+  } catch (err) {
+    console.warn("Firestore defense_news save error:", err);
+  }
+}
+
+/**
+ * Deletes an article from Firestore and local storage.
+ */
+export async function deleteDefenseNewsItem(id: string): Promise<void> {
+  // 1. Remove locally
+  removeLocalCustomNews(id);
+
+  // 2. Delete from Firestore
+  try {
+    await deleteDoc(doc(db, "defense_news", id));
+  } catch (err) {
+    console.warn("Firestore defense_news delete error:", err);
   }
 }
 

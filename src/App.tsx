@@ -17,12 +17,16 @@ import NewsView from "./components/NewsView";
 import Footer from "./components/Footer";
 import PrivacyView from "./components/PrivacyView";
 import CookieBanner from "./components/CookieBanner";
+import AdminLoginModal from "./components/AdminLoginModal";
 import { useLanguage } from "./context/LanguageContext";
+import { useAdmin } from "./context/AdminContext";
 import { initializeGA4, trackPageView } from "./lib/ga4";
+import { ShieldCheck } from "lucide-react";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const { language, t } = useLanguage();
+  const { notification, isAdmin } = useAdmin();
   
   // Prefill states shared between pages and the Contact inquiry form
   const [prefilledProduct, setPrefilledProduct] = useState("");
@@ -215,6 +219,22 @@ export default function App() {
         forceOpen={forceCookieBanner}
         onCloseForce={() => setForceCookieBanner(false)}
       />
+
+      {/* Global Administrator Auth Modal */}
+      <AdminLoginModal />
+
+      {/* Global Admin Toast Notification */}
+      {notification && (
+        <div
+          id="global-admin-toast"
+          className="fixed bottom-6 right-6 z-50 max-w-md bg-slate-900 text-white text-xs px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-2.5 animate-fadeIn"
+        >
+          <div className="w-6 h-6 rounded-full bg-military-600/30 text-military-400 flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-4 h-4" />
+          </div>
+          <span className="font-medium leading-tight">{notification}</span>
+        </div>
+      )}
     </div>
   );
 }
