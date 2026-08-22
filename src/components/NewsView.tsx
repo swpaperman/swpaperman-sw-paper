@@ -853,170 +853,184 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
               </p>
             </div>
 
-            {/* Google Sheets Live Automation & Admin console box */}
+            {/* Admin toggle console box & Google Sheets Live Automation (Admin Only) */}
             <div className="flex flex-col sm:flex-row gap-3 items-stretch">
-              
-              {/* Google Sheets Sync Card */}
-              <div className="p-4 rounded-xl bg-gradient-to-br from-military-920 via-military-900 to-gray-950 border border-kraft-500/30 shadow-lg flex flex-col justify-between gap-3 min-w-[300px] max-w-sm text-left">
-                <div className="flex items-center justify-between gap-2 border-b border-military-800/80 pb-2">
-                  <div className="flex items-center gap-2">
-                    <FileSpreadsheet className="w-4 h-4 text-kraft-400" />
-                    <div>
-                      <span className="text-xs font-bold text-white block">K-방산 뉴스 시트 자동화</span>
-                      <span className="text-[9.5px] font-mono text-gray-400">매일 아침 08:00 자동 모니터링</span>
+              {isAdminMode ? (
+                <>
+                  {/* Google Sheets Sync Card (Visible to Admin Only) */}
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-military-920 via-military-900 to-gray-950 border border-kraft-500/40 shadow-lg flex flex-col justify-between gap-3 min-w-[300px] max-w-sm text-left">
+                    <div className="flex items-center justify-between gap-2 border-b border-military-800/80 pb-2">
+                      <div className="flex items-center gap-2">
+                        <FileSpreadsheet className="w-4 h-4 text-kraft-400" />
+                        <div>
+                          <span className="text-xs font-bold text-white block">K-방산 뉴스 시트 자동화</span>
+                          <span className="text-[9.5px] font-mono text-gray-400">매일 아침 08:00 자동 모니터링</span>
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center gap-1 text-[9.5px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        관리자 제어
+                      </span>
                     </div>
-                  </div>
-                  <span className="inline-flex items-center gap-1 text-[9.5px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    LIVE 연동
-                  </span>
-                </div>
 
-                <div className="space-y-1.5 text-[11px] text-gray-300">
-                  <div className="flex items-center justify-between text-[10px] text-gray-400 font-mono">
-                    <span>최근 동기화:</span>
-                    <span className="text-kraft-350 truncate max-w-[170px]">{lastSyncTime}</span>
-                  </div>
-                  {sheetSyncError && (
-                    <div className="p-1.5 bg-red-950/60 border border-red-800/60 rounded text-[10px] text-red-300 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3 shrink-0" />
-                      <span className="truncate">{sheetSyncError}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-1.5 pt-1">
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={() => syncWithGoogleSheet(false)}
-                      disabled={isSyncingSheet}
-                      className="flex-1 py-1.5 px-2 rounded-lg bg-kraft-500 hover:bg-kraft-450 text-gray-950 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 ${isSyncingSheet ? "animate-spin" : ""}`} />
-                      <span>{isSyncingSheet ? "시트 동기화 중..." : "시트 실시간 동기화"}</span>
-                    </button>
-                    <button
-                      onClick={() => setIsSheetSettingsOpen(true)}
-                      className="p-1.5 rounded-lg bg-military-850 hover:bg-military-800 text-gray-300 text-xs border border-military-750 transition-colors cursor-pointer"
-                      title="구글 시트 ID 설정"
-                    >
-                      <Settings className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 pt-1 border-t border-military-800/60 text-[10px]">
-                    <a
-                      href={`https://docs.google.com/spreadsheets/d/${sheetId}/edit`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-gray-400 hover:text-kraft-350 transition-colors flex items-center gap-1"
-                    >
-                      <ExternalLink className="w-2.5 h-2.5" /> 원본 구글시트 열기
-                    </a>
-                    <button
-                      onClick={() => syncWithGoogleSheet(true)}
-                      className="text-kraft-350 hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
-                    >
-                      <LogIn className="w-2.5 h-2.5" /> Google 로그인 동기화
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Admin toggle console box */}
-              <div className="p-4 rounded-xl bg-military-920 border border-military-800 shadow-inner flex flex-col justify-between gap-2 min-w-[210px] text-left">
-                <div>
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
-                      {isAdminMode ? (
-                        <Unlock className="w-4 h-4 text-kraft-400" />
-                      ) : (
-                        <Lock className="w-4 h-4 text-gray-500" />
+                    <div className="space-y-1.5 text-[11px] text-gray-300">
+                      <div className="flex items-center justify-between text-[10px] text-gray-400 font-mono">
+                        <span>최근 동기화:</span>
+                        <span className="text-kraft-350 truncate max-w-[170px]">{lastSyncTime}</span>
+                      </div>
+                      {sheetSyncError && (
+                        <div className="p-1.5 bg-red-950/60 border border-red-800/60 rounded text-[10px] text-red-300 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{sheetSyncError}</span>
+                        </div>
                       )}
-                      <span className="text-xs font-bold text-gray-300">관리자 콘솔</span>
                     </div>
-                    <div className="h-2 w-2 rounded-full bg-kraft-500 animate-ping" />
-                  </div>
-                  
-                  {isAdminMode ? (
-                    <div className="space-y-2 mt-2">
-                      <div className="text-[10.5px] text-kraft-350 font-normal leading-tight">관리자 인증됨</div>
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={openRegisterNewForm}
-                          className="flex-1 py-1 px-2.5 rounded bg-kraft-500 text-gray-950 text-xs font-black hover:bg-kraft-600 transition-all cursor-pointer text-center"
+
+                    <div className="flex flex-col gap-1.5 pt-1">
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => syncWithGoogleSheet(false)}
+                          disabled={isSyncingSheet}
+                          className="flex-1 py-1.5 px-2 rounded-lg bg-kraft-500 hover:bg-kraft-450 text-gray-950 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
                         >
-                          수기 등록
+                          <RefreshCw className={`w-3.5 h-3.5 ${isSyncingSheet ? "animate-spin" : ""}`} />
+                          <span>{isSyncingSheet ? "시트 동기화 중..." : "시트 실시간 동기화"}</span>
                         </button>
-                        <button 
-                          onClick={logoutAdmin}
-                          className="py-1 px-2 rounded bg-military-800 text-gray-300 text-xs font-medium hover:bg-military-700 transition-all cursor-pointer"
+                        <button
+                          onClick={() => setIsSheetSettingsOpen(true)}
+                          className="p-1.5 rounded-lg bg-military-850 hover:bg-military-800 text-gray-300 text-xs border border-military-750 transition-colors cursor-pointer"
+                          title="구글 시트 ID 설정"
                         >
-                          로그아웃
+                          <Settings className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-military-800/60 text-[10px]">
+                        <a
+                          href={`https://docs.google.com/spreadsheets/d/${sheetId}/edit`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-400 hover:text-kraft-350 transition-colors flex items-center gap-1"
+                        >
+                          <ExternalLink className="w-2.5 h-2.5" /> 원본 구글시트 열기
+                        </a>
+                        <button
+                          onClick={() => syncWithGoogleSheet(true)}
+                          className="text-kraft-350 hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <LogIn className="w-2.5 h-2.5" /> Google 로그인 동기화
                         </button>
                       </div>
                     </div>
-                  ) : (
-                    <div className="space-y-1.5 mt-2">
+                  </div>
+
+                  {/* Admin Management Console (Logged In) */}
+                  <div className="p-4 rounded-xl bg-military-920 border border-military-800 shadow-inner flex flex-col justify-between gap-2 min-w-[220px] text-left">
+                    <div>
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2">
+                          <Unlock className="w-4 h-4 text-kraft-400" />
+                          <span className="text-xs font-bold text-gray-300">관리자 콘솔</span>
+                        </div>
+                        <div className="h-2 w-2 rounded-full bg-kraft-500 animate-ping" />
+                      </div>
+                      
+                      <div className="space-y-2 mt-2">
+                        <div className="text-[10.5px] text-kraft-350 font-normal leading-tight">관리자 권한 인증됨</div>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={openRegisterNewForm}
+                            className="flex-1 py-1 px-2.5 rounded bg-kraft-500 text-gray-950 text-xs font-black hover:bg-kraft-600 transition-all cursor-pointer text-center"
+                          >
+                            뉴스 수기 등록
+                          </button>
+                          <button 
+                            onClick={logoutAdmin}
+                            className="py-1 px-2.5 rounded bg-military-800 text-gray-300 text-xs font-medium hover:bg-military-700 transition-all cursor-pointer"
+                          >
+                            로그아웃
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Developer RSS Simulator shortcut buttons */}
+                    <div className="mt-1 border-t border-military-800 pt-2 flex flex-col gap-1 font-sans">
+                      <button 
+                        onClick={simulateAPIImport}
+                        className="w-full py-1 text-center bg-military-850 hover:bg-military-800 text-[10px] font-mono font-bold text-kraft-300 rounded border border-military-750/50 flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <Sparkles className="w-3 h-3 text-kraft-400" /> RSS / AI 요약 시뮬레이터
+                      </button>
+                      {articles.length !== initialArticles.length && (
+                        <button 
+                          onClick={resetToDefault}
+                          className="w-full text-center text-[9.5px] text-gray-400 hover:text-gray-300 border border-dashed border-military-800 py-0.5 rounded cursor-pointer"
+                        >
+                          품질 데이터 초기화 복구
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Admin Login Prompt (When Not Logged In) */
+                <div className="p-4 rounded-xl bg-military-920 border border-military-800 shadow-inner flex flex-col justify-between gap-2 min-w-[260px] max-w-sm text-left">
+                  <div>
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-4 h-4 text-gray-500" />
+                        <span className="text-xs font-bold text-gray-300">관리자 전용 콘솔</span>
+                      </div>
+                      <div className="h-2 w-2 rounded-full bg-gray-600" />
+                    </div>
+
+                    <div className="space-y-2 mt-2">
+                      <p className="text-[10.5px] text-gray-400 leading-snug">
+                        구글 시트 실시간 동기화, 원본 시트 관리 및 뉴스 편집은 관리자 로그인 후 가능합니다.
+                      </p>
+
                       {showAdminLogin ? (
-                        <form onSubmit={handleAdminAccess} className="space-y-1.5">
+                        <form onSubmit={handleAdminAccess} className="space-y-2 pt-1">
                           <input 
                             type="password" 
-                            placeholder="관리 암호 입력" 
+                            placeholder="관리자 암호 입력" 
                             value={adminPassword}
                             onChange={(e) => setAdminPassword(e.target.value)}
-                            className="w-full text-xs py-1 px-2 rounded bg-military-950 border border-military-700 text-white placeholder-gray-500 focus:outline-none focus:border-kraft-500"
+                            className="w-full text-xs py-1.5 px-2.5 rounded bg-military-950 border border-military-700 text-white placeholder-gray-500 focus:outline-none focus:border-kraft-500"
                             autoFocus
                           />
-                          {loginError && <p className="text-[9px] text-red-400 font-medium">{loginError}</p>}
+                          {loginError && <p className="text-[9.5px] text-red-400 font-medium">{loginError}</p>}
                           <div className="flex gap-1.5 justify-end">
                             <button 
                               type="button"
                               onClick={() => setShowAdminLogin(false)}
-                              className="py-0.5 px-1.5 text-[10px] hover:text-white text-gray-400"
+                              className="py-1 px-2 text-[10.5px] hover:text-white text-gray-400"
                             >
                               취소
                             </button>
                             <button 
                               type="submit"
-                              className="py-0.5 px-2 rounded bg-kraft-500 text-gray-950 text-[10.5px] font-bold"
+                              className="py-1 px-3 rounded bg-kraft-500 text-gray-950 text-xs font-bold hover:bg-kraft-450 transition-colors"
                             >
                               확인
                             </button>
                           </div>
                         </form>
                       ) : (
-                        <div className="flex gap-1.5">
+                        <div className="pt-1">
                           <button 
                             onClick={() => setShowAdminLogin(true)}
-                            className="w-full py-1.5 px-2 rounded bg-military-800 hover:bg-military-750 text-white text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 border border-military-700/80"
+                            className="w-full py-2 px-3 rounded-lg bg-military-800 hover:bg-military-750 text-white text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 border border-military-700/80 shadow-xs"
                           >
-                            <Lock className="w-3 h-3 text-kraft-400" /> 관리자 로그인
+                            <Lock className="w-3.5 h-3.5 text-kraft-400" /> 관리자 로그인
                           </button>
                         </div>
                       )}
                     </div>
-                  )}
+                  </div>
                 </div>
-
-                {/* Developer RSS Simulator shortcut buttons */}
-                <div className="mt-1 border-t border-military-800 pt-2 flex flex-col gap-1 font-sans">
-                  <button 
-                    onClick={simulateAPIImport}
-                    className="w-full py-1 text-center bg-military-850 hover:bg-military-800 text-[10px] font-mono font-bold text-kraft-300 rounded border border-military-750/50 flex items-center justify-center gap-1 cursor-pointer"
-                  >
-                    <Sparkles className="w-3 h-3 text-kraft-400" /> RSS / AI 요약 시뮬레이터
-                  </button>
-                  {articles.length !== initialArticles.length && (
-                    <button 
-                      onClick={resetToDefault}
-                      className="w-full text-center text-[9.5px] text-gray-400 hover:text-gray-300 border border-dashed border-military-800 py-0.5 rounded cursor-pointer"
-                    >
-                      품질 데이터 초기화 복구
-                    </button>
-                  )}
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
