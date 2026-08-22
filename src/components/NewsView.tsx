@@ -404,6 +404,9 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
     return localStorage.getItem("sw_defense_last_sync_time") || "매일 아침 08:00 자동 동기화 활성 (최신: 2026-08-22)";
   });
   const [isSheetSettingsOpen, setIsSheetSettingsOpen] = useState(false);
+  const [isPermissionGuideOpen, setIsPermissionGuideOpen] = useState(false);
+  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
+  const [pasteInputText, setPasteInputText] = useState("");
   const [sheetInputVal, setSheetInputVal] = useState(sheetId);
   const [googleUserEmail, setGoogleUserEmail] = useState<string | null>(null);
 
@@ -425,10 +428,8 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
           }
         }
       } catch (authErr: any) {
-        console.error("Google Auth failed during sync:", authErr);
-        setSheetSyncError("구글 로그인 인증이 취소되었거나 실패했습니다.");
-        setIsSyncingSheet(false);
-        return;
+        console.warn("Google Auth popup bypassed/failed:", authErr);
+        setSheetSyncError("구글 팝업 인증 제한됨 — 구글 시트에서 [공유]를 '링크가 있는 모든 사용자(뷰어)'로 설정하시면 로그인 없이 100% 자동 동기화됩니다.");
       }
     }
 
@@ -451,6 +452,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
         const nowTimeStr = `${new Date().toLocaleDateString('ko-KR')} ${new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`;
         setLastSyncTime(nowTimeStr);
         localStorage.setItem("sw_defense_last_sync_time", nowTimeStr);
+        setSheetSyncError(null);
         showNotification(`구글 시트(K-방산 뉴스 모니터링)에서 ${result.articles.length}건의 최신 뉴스를 성공적으로 동기화했습니다!`);
       } else {
         if (result.error) {
@@ -464,6 +466,77 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
       setSheetSyncError("구글 시트 데이터를 가져오는 중 오류가 발생했습니다.");
     } finally {
       setIsSyncingSheet(false);
+    }
+  };
+
+  // Handle direct paste sync (from Google Sheets or Excel copy-paste)
+  const handlePasteSync = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pasteInputText.trim()) {
+      alert("붙여넣을 구글 시트 데이터를 입력해주세요.");
+      return;
+    }
+
+    try {
+      const rawRows = pasteInputText.trim().split(/\r?\n/).map(line => {
+        if (line.includes("\t")) {
+          return line.split("\t");
+        }
+        return line.split(",");
+      });
+
+      if (rawRows.length === 0) {
+        alert("유효한 데이터 행이 없습니다.");
+        return;
+      }
+
+      // Check if first row is header
+      const headers = rawRows[0];
+      const dataRows = rawRows.length > 1 ? rawRows.slice(1) : rawRows;
+      
+      const newArticles: NewsArticle[] = dataRows.map((row, idx) => {
+        const title = row[0]?.trim() || `K-방산 모니터링 뉴스 ${idx + 1}`;
+        const summary = row[1]?.trim() || row[0]?.trim() || "";
+        const source = row[2]?.trim() || "K-방산 뉴스 모니터링";
+        const date = row[3]?.trim() || new Date().toISOString().split("T")[0];
+        const url = row[4]?.trim() || "https://kookbang.dema.mil.kr/";
+        const category = row[5]?.trim() || "국내 방산기업";
+        const core = row[6]?.trim() || summary.slice(0, 80);
+        const body = row[7]?.trim() || summary || title;
+        const persp = row[8]?.trim() || "수원지관산업의 60년 방산규격 지환통 가공 및 고도 방습 코팅 원천 기술은 추진제와 화약의 장기 야전 보존 신뢰성을 완벽하게 보장합니다.";
+
+        return {
+          id: `news-paste-${Date.now()}-${idx + 1}`,
+          tab: category.includes("글로벌") || category.includes("해외") ? "global" : "domestic",
+          category,
+          title,
+          summary,
+          source,
+          date,
+          url,
+          imageUrl: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=600&q=80",
+          coreSummary: core,
+          bodyText: body,
+          perspective: persp
+        };
+      }).filter(a => Boolean(a.title));
+
+      if (newArticles.length > 0) {
+        setArticles(prev => {
+          const merged = [...newArticles, ...prev];
+          return merged.sort((a, b) => b.date.localeCompare(a.date));
+        });
+        const nowTimeStr = `${new Date().toLocaleDateString('ko-KR')} ${new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`;
+        setLastSyncTime(nowTimeStr);
+        setIsPasteModalOpen(false);
+        setPasteInputText("");
+        setSheetSyncError(null);
+        showNotification(`${newArticles.length}건의 뉴스를 클립보드에서 즉시 동기화했습니다!`);
+      } else {
+        alert("데이터를 분석할 수 없습니다. 형식을 확인해주세요.");
+      }
+    } catch (err: any) {
+      alert("데이터 분석 중 오류가 발생했습니다: " + err.message);
     }
   };
 
@@ -879,9 +952,17 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                         <span className="text-kraft-350 truncate max-w-[170px]">{lastSyncTime}</span>
                       </div>
                       {sheetSyncError && (
-                        <div className="p-1.5 bg-red-950/60 border border-red-800/60 rounded text-[10px] text-red-300 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3 shrink-0" />
-                          <span className="truncate">{sheetSyncError}</span>
+                        <div className="p-2 bg-red-950/70 border border-red-800/80 rounded-lg text-[10px] text-red-200 flex flex-col gap-1.5">
+                          <div className="flex items-start gap-1">
+                            <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+                            <span className="leading-snug">{sheetSyncError}</span>
+                          </div>
+                          <button
+                            onClick={() => setIsPermissionGuideOpen(true)}
+                            className="self-start text-[10px] font-bold text-kraft-300 hover:text-white underline cursor-pointer flex items-center gap-1"
+                          >
+                            <HelpCircle className="w-3 h-3" /> 해결법: 3초 만에 구글 시트 공유 권한 설정하기
+                          </button>
                         </div>
                       )}
                     </div>
@@ -894,7 +975,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                           className="flex-1 py-1.5 px-2 rounded-lg bg-kraft-500 hover:bg-kraft-450 text-gray-950 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50"
                         >
                           <RefreshCw className={`w-3.5 h-3.5 ${isSyncingSheet ? "animate-spin" : ""}`} />
-                          <span>{isSyncingSheet ? "시트 동기화 중..." : "시트 실시간 동기화"}</span>
+                          <span>{isSyncingSheet ? "동기화 진행 중..." : "시트 실시간 동기화"}</span>
                         </button>
                         <button
                           onClick={() => setIsSheetSettingsOpen(true)}
@@ -912,13 +993,19 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                           rel="noopener noreferrer"
                           className="text-gray-400 hover:text-kraft-350 transition-colors flex items-center gap-1"
                         >
-                          <ExternalLink className="w-2.5 h-2.5" /> 원본 구글시트 열기
+                          <ExternalLink className="w-2.5 h-2.5" /> 시트 열기
                         </a>
                         <button
-                          onClick={() => syncWithGoogleSheet(true)}
+                          onClick={() => setIsPermissionGuideOpen(true)}
                           className="text-kraft-350 hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
                         >
-                          <LogIn className="w-2.5 h-2.5" /> Google 로그인 동기화
+                          <HelpCircle className="w-2.5 h-2.5" /> 공유 설정 가이드
+                        </button>
+                        <button
+                          onClick={() => setIsPasteModalOpen(true)}
+                          className="text-gray-300 hover:text-kraft-300 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <FileText className="w-2.5 h-2.5" /> 직접 붙여넣기
                         </button>
                       </div>
                     </div>
@@ -1867,6 +1954,192 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                         className="py-2 px-4 text-xs font-bold text-gray-950 bg-kraft-500 hover:bg-kraft-600 rounded-lg shadow-sm"
                       >
                         설정 저장 및 동기화
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 3-Second Google Sheet Permission Guide Modal */}
+      <AnimatePresence>
+        {isPermissionGuideOpen && (
+          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsPermissionGuideOpen(false)}
+              className="fixed inset-0 bg-military-900/80 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white text-gray-800 rounded-3xl w-full max-w-lg shadow-2xl relative z-10 border border-military-800/10 overflow-hidden text-left"
+            >
+              <div className="h-2 bg-gradient-to-r from-emerald-500 via-kraft-500 to-emerald-400" />
+              <div className="p-6 sm:p-7 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    <h3 className="text-lg font-black text-gray-900">구글 시트 1클릭 공유 권한 설정 (3초)</h3>
+                  </div>
+                  <button
+                    onClick={() => setIsPermissionGuideOpen(false)}
+                    className="p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 leading-relaxed">
+                  <strong>💡 왜 권한 설정이 필요한가요?</strong><br />
+                  현재 구글 시트가 <strong>'제한됨(비공개)'</strong> 상태로 되어 있어 브라우저나 서버가 데이터를 읽어올 수 없습니다. 구글 시트에서 <strong>'링크가 있는 모든 사용자 - 뷰어'</strong>로 단 한 번만 변경해주시면 <strong>별도 로그인 없이</strong> 매일 아침 8시 자동 업데이트 및 실시간 동기화가 완벽하게 작동합니다.
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                    <span className="w-6 h-6 rounded-full bg-kraft-500 text-gray-950 font-black text-xs flex items-center justify-center shrink-0">1</span>
+                    <div className="text-xs text-gray-700 space-y-1">
+                      <p className="font-bold text-gray-900">구글 시트 열기</p>
+                      <p className="text-gray-500">아래 버튼을 눌러 연동할 구글 스프레드시트 화면으로 이동합니다.</p>
+                      <a
+                        href={`https://docs.google.com/spreadsheets/d/${sheetId}/edit`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg bg-military-800 text-kraft-300 font-bold text-[11px] hover:bg-military-700 transition-colors mt-1"
+                      >
+                        <ExternalLink className="w-3 h-3" /> 연동 구글시트 바로 열기
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                    <span className="w-6 h-6 rounded-full bg-kraft-500 text-gray-950 font-black text-xs flex items-center justify-center shrink-0">2</span>
+                    <div className="text-xs text-gray-700 space-y-1">
+                      <p className="font-bold text-gray-900">우측 상단 [공유] 버튼 클릭</p>
+                      <p className="text-gray-500">
+                        [일반 액세스] 항목에서 <strong>'제한됨'</strong>을 클릭하여 <strong>'링크가 있는 모든 사용자'</strong>로 변경하고, 역할을 <strong>'뷰어'</strong>로 선택 후 [완료]를 누릅니다.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                    <span className="w-6 h-6 rounded-full bg-emerald-500 text-white font-black text-xs flex items-center justify-center shrink-0">3</span>
+                    <div className="text-xs text-emerald-900 space-y-1">
+                      <p className="font-bold text-emerald-950">[시트 실시간 동기화] 클릭</p>
+                      <p className="text-emerald-800">
+                        홈페이지로 돌아와 <strong>[시트 실시간 동기화]</strong> 버튼을 누르면 구글 로그인 없이 즉시 K-방산 최신 뉴스가 불러와집니다!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPermissionGuideOpen(false);
+                      setIsPasteModalOpen(true);
+                    }}
+                    className="text-xs text-gray-500 hover:text-kraft-700 underline"
+                  >
+                    시트 권한 수정 없이 복사/붙여넣기로 등록하기 &rarr;
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPermissionGuideOpen(false);
+                      syncWithGoogleSheet(false);
+                    }}
+                    className="py-2 px-5 text-xs font-bold text-gray-950 bg-kraft-500 hover:bg-kraft-600 rounded-xl shadow-sm"
+                  >
+                    확인 및 동기화 시도
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Direct Clipboard / Sheet Paste Modal */}
+      <AnimatePresence>
+        {isPasteModalOpen && (
+          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsPasteModalOpen(false)}
+              className="fixed inset-0 bg-military-900/80 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white text-gray-800 rounded-3xl w-full max-w-xl shadow-2xl relative z-10 border border-military-800/10 overflow-hidden text-left"
+            >
+              <div className="h-2 bg-gradient-to-r from-kraft-500 via-military-700 to-kraft-400" />
+              <div className="p-6 sm:p-7 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-kraft-600" />
+                    <h3 className="text-lg font-black text-gray-900">구글 시트 데이터 직접 복사/붙여넣기</h3>
+                  </div>
+                  <button
+                    onClick={() => setIsPasteModalOpen(false)}
+                    className="p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  구글 시트의 기사 목록 셀 영역을 복사(Ctrl+C)하여 아래 텍스트 상자에 붙여넣기(Ctrl+V)하시면 권한 설정 없이 즉시 홈페이지에 반영됩니다.
+                </p>
+
+                <form onSubmit={handlePasteSync} className="space-y-4 pt-1">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      시트 데이터 (탭 구분 또는 CSV 텍스트)
+                    </label>
+                    <textarea
+                      value={pasteInputText}
+                      onChange={(e) => setPasteInputText(e.target.value)}
+                      placeholder="구글 시트에서 행들을 선택 후 복사하여 여기에 붙여넣으세요...&#10;예: 제목 \t 요약 \t 출처 \t 2026-08-22 \t 링크..."
+                      rows={8}
+                      className="w-full text-xs p-3 rounded-xl border border-gray-300 font-mono text-gray-800 focus:outline-none focus:border-kraft-500 focus:ring-1 focus:ring-kraft-500 leading-relaxed"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex justify-between items-center pt-2">
+                    <a
+                      href={`https://docs.google.com/spreadsheets/d/${sheetId}/edit`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-kraft-700 hover:underline flex items-center gap-1"
+                    >
+                      <ExternalLink className="w-3 h-3" /> 구글 시트 열기
+                    </a>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsPasteModalOpen(false)}
+                        className="py-2 px-3 text-xs font-medium text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
+                      >
+                        취소
+                      </button>
+                      <button
+                        type="submit"
+                        className="py-2 px-5 text-xs font-bold text-gray-950 bg-kraft-500 hover:bg-kraft-600 rounded-xl shadow-sm"
+                      >
+                        클립보드 뉴스 동기화
                       </button>
                     </div>
                   </div>

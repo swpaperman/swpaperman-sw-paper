@@ -762,10 +762,37 @@ export function parseSheetRowsToNews(headers: string[], rows: any[][]): DefenseN
 export async function fetchDefenseNewsFromGoogleSheet(
   sheetId: string = DEFAULT_DEFENSE_NEWS_SHEET_ID,
   accessToken?: string | null
-): Promise<{ success: boolean; articles: DefenseNewsSheetRow[]; error?: string; sourceMode: "api" | "gviz" | "fallback" }> {
+): Promise<{ success: boolean; articles: DefenseNewsSheetRow[]; error?: string; isPrivate?: boolean; sourceMode: "server" | "api" | "gviz" | "fallback" }> {
   const targetSheetId = sheetId.trim() || DEFAULT_DEFENSE_NEWS_SHEET_ID;
 
-  // 1. Try Official Google Sheets API v4 if Access Token is present
+  // 1. Try Server-Side Proxy Endpoint First (Cleanest, no CORS, works in background)
+  try {
+    const srvRes = await fetch(`/api/defense-news/sheet?sheetId=${encodeURIComponent(targetSheetId)}`);
+    if (srvRes.ok) {
+      const srvData = await srvRes.json();
+      if (srvData.success && Array.isArray(srvData.articles) && srvData.articles.length > 0) {
+        return {
+          success: true,
+          articles: srvData.articles,
+          sourceMode: "server"
+        };
+      }
+      if (srvData.isPrivate) {
+        // Sheet is currently private
+        return {
+          success: false,
+          articles: [],
+          isPrivate: true,
+          error: srvData.error,
+          sourceMode: "server"
+        };
+      }
+    }
+  } catch (srvErr) {
+    console.warn("Server sheet proxy failed, attempting client-side fallback:", srvErr);
+  }
+
+  // 2. Try Official Google Sheets API v4 if Access Token is present
   if (accessToken) {
     try {
       const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${targetSheetId}/values/A1:Z500`;
@@ -794,7 +821,7 @@ export async function fetchDefenseNewsFromGoogleSheet(
     }
   }
 
-  // 2. Try Public GViz JSON Endpoint
+  // 3. Try Public GViz JSON Endpoint
   try {
     const gvizUrl = `https://docs.google.com/spreadsheets/d/${targetSheetId}/gviz/tq?tqx=out:json`;
     const gvizRes = await fetch(gvizUrl);
@@ -825,11 +852,11 @@ export async function fetchDefenseNewsFromGoogleSheet(
     console.warn("GViz JSON endpoint fetch failed:", gvizErr);
   }
 
-  // 3. If sheet requires auth and no token is present or read failed, report clear instruction
   return {
     success: false,
     articles: [],
-    error: "구글 시트 접근 권한이 필요합니다. 상단의 [Google 로그인]을 진행하시면 비공개 시트에서도 최신 8월 22일 뉴스 및 실시간 모니터링 데이터를 안전하게 즉시 불러옵니다.",
+    isPrivate: true,
+    error: "구글 시트가 '제한됨(비공개)' 상태입니다. 구글 시트 우측 상단 [공유] 버튼에서 '링크가 있는 모든 사용자 - 뷰어'로 설정해주시면 로그인 없이 즉시 100% 자동 동기화됩니다.",
     sourceMode: "fallback"
   };
 }

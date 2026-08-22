@@ -28,6 +28,224 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", mode: process.env.NODE_ENV || "development" });
 });
 
+// Helper function to parse CSV into rows
+function parseCSV(text: string): string[][] {
+  const lines: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+
+    if (inQuotes) {
+      if (char === '"' && nextChar === '"') {
+        cell += '"';
+        i++;
+      } else if (char === '"') {
+        inQuotes = false;
+      } else {
+        cell += char;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+      } else if (char === ',') {
+        row.push(cell.trim());
+        cell = "";
+      } else if (char === '\r') {
+        // ignore CR
+      } else if (char === '\n') {
+        row.push(cell.trim());
+        if (row.some(c => c.length > 0)) {
+          lines.push(row);
+        }
+        row = [];
+        cell = "";
+      } else {
+        cell += char;
+      }
+    }
+  }
+  if (cell || row.length > 0) {
+    row.push(cell.trim());
+    if (row.some(c => c.length > 0)) {
+      lines.push(row);
+    }
+  }
+  return lines;
+}
+
+// Convert CSV or 2D array into structured DefenseNewsArticles
+function rowsToDefenseNews(headers: string[], rows: string[][]): any[] {
+  const normHeaders = headers.map(h => (h || "").toLowerCase().replace(/\s+/g, ""));
+  
+  const colIdx = {
+    tab: normHeaders.findIndex(h => h.includes("tab") || h.includes("탭") || h.includes("구분")),
+    category: normHeaders.findIndex(h => h.includes("cat") || h.includes("분류") || h.includes("카테고리")),
+    title: normHeaders.findIndex(h => h.includes("title") || h.includes("제목") || h.includes("헤드라인")),
+    summary: normHeaders.findIndex(h => h.includes("summary") || h.includes("요약") || h.includes("개요")),
+    source: normHeaders.findIndex(h => h.includes("source") || h.includes("출처") || h.includes("언론사") || h.includes("매체")),
+    date: normHeaders.findIndex(h => h.includes("date") || h.includes("일자") || h.includes("날짜") || h.includes("게시일")),
+    url: normHeaders.findIndex(h => h.includes("url") || h.includes("링크") || h.includes("원문") || h.includes("link")),
+    imageUrl: normHeaders.findIndex(h => h.includes("image") || h.includes("이미지") || h.includes("사진")),
+    coreSummary: normHeaders.findIndex(h => h.includes("core") || h.includes("핵심") || h.includes("쟁점")),
+    bodyText: normHeaders.findIndex(h => h.includes("body") || h.includes("본문") || h.includes("내용") || h.includes("상세")),
+    perspective: normHeaders.findIndex(h => h.includes("persp") || h.includes("관점") || h.includes("수원지관") || h.includes("논평"))
+  };
+
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  return rows.map((row, idx) => {
+    const rawTitle = colIdx.title !== -1 ? (row[colIdx.title] || "") : (row[0] || "");
+    if (!rawTitle.trim()) return null;
+
+    const rawTab = colIdx.tab !== -1 ? (row[colIdx.tab] || "") : "";
+    const rawCategory = colIdx.category !== -1 ? (row[colIdx.category] || "") : "";
+    const rawSummary = colIdx.summary !== -1 ? (row[colIdx.summary] || "") : "";
+    const rawSource = colIdx.source !== -1 ? (row[colIdx.source] || "") : "";
+    const rawDate = colIdx.date !== -1 ? (row[colIdx.date] || "") : "";
+    const rawUrl = colIdx.url !== -1 ? (row[colIdx.url] || "") : "";
+    const rawImg = colIdx.imageUrl !== -1 ? (row[colIdx.imageUrl] || "") : "";
+    const rawCore = colIdx.coreSummary !== -1 ? (row[colIdx.coreSummary] || "") : "";
+    const rawBody = colIdx.bodyText !== -1 ? (row[colIdx.bodyText] || "") : "";
+    const rawPersp = colIdx.perspective !== -1 ? (row[colIdx.perspective] || "") : "";
+
+    let tab: "domestic" | "global" | "suwon" = "domestic";
+    const lowerTab = rawTab.toLowerCase();
+    if (lowerTab.includes("glob") || lowerTab.includes("해외") || lowerTab.includes("글로벌") || rawCategory.includes("글로벌")) {
+      tab = "global";
+    } else if (lowerTab.includes("suwon") || lowerTab.includes("수원") || rawCategory.includes("수원지관")) {
+      tab = "suwon";
+    }
+
+    let cleanDate = todayStr;
+    if (rawDate) {
+      const match = rawDate.match(/(\d{4})[./-](\d{1,2})[./-](\d{1,2})/);
+      if (match) {
+        const y = match[1];
+        const m = match[2].padStart(2, "0");
+        const d = match[3].padStart(2, "0");
+        cleanDate = `${y}-${m}-${d}`;
+      } else {
+        cleanDate = rawDate.trim();
+      }
+    }
+
+    const defaultImgs = [
+      "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80"
+    ];
+    const finalImg = (rawImg.startsWith("http://") || rawImg.startsWith("https://")) ? rawImg : defaultImgs[idx % defaultImgs.length];
+    const finalSummary = rawSummary.trim() || rawBody.slice(0, 120) || rawTitle;
+
+    return {
+      id: `news-sheet-${cleanDate.replace(/-/g, '')}-${idx + 1}`,
+      tab,
+      category: rawCategory.trim() || (tab === "global" ? "글로벌 방산시장" : "국내 방산기업"),
+      title: rawTitle.trim(),
+      summary: finalSummary,
+      source: rawSource.trim() || "K-방산 뉴스 모니터링",
+      date: cleanDate,
+      url: rawUrl.trim() || "https://kookbang.dema.mil.kr/",
+      imageUrl: finalImg,
+      coreSummary: rawCore.trim() || finalSummary.slice(0, 80),
+      bodyText: rawBody.trim() || rawSummary || rawTitle,
+      perspective: rawPersp.trim() || "수원지관산업의 60년 방산규격 지환통 가공 및 고도 방습 코팅 원천 기술은 추진제와 화약의 장기 야전 보존 신뢰성을 완벽하게 보장합니다."
+    };
+  }).filter(Boolean);
+}
+
+// Endpoint to fetch Google Sheet server-side (bypasses CORS & client popup issues)
+app.get("/api/defense-news/sheet", async (req, res) => {
+  const sheetId = (req.query.sheetId as string) || "1DlMYbO55PuV1PEfeLrIsZJLGUpb2NgySEjZMcYgLY9Q";
+  const gid = (req.query.gid as string) || "0";
+
+  try {
+    // Attempt 1: Fetch via direct CSV export URL
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+    const csvRes = await fetch(csvUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      redirect: 'follow'
+    });
+
+    if (csvRes.ok) {
+      const csvText = await csvRes.text();
+      // Check if redirected to Google Accounts login page
+      if (csvText.includes("<html") && (csvText.includes("ServiceLogin") || csvText.includes("accounts.google.com"))) {
+        return res.json({
+          success: false,
+          isPrivate: true,
+          error: "구글 시트가 현재 '제한됨(비공개)' 상태입니다. 구글 시트 우측 상단 [공유] 버튼에서 '링크가 있는 모든 사용자 - 뷰어'로 변경하시면 로그인 없이 즉시 100% 자동 동기화됩니다.",
+          sheetUrl: `https://docs.google.com/spreadsheets/d/${sheetId}/edit`
+        });
+      }
+
+      const rows = parseCSV(csvText);
+      if (rows.length > 1) {
+        const headers = rows[0];
+        const dataRows = rows.slice(1);
+        const articles = rowsToDefenseNews(headers, dataRows);
+        if (articles.length > 0) {
+          return res.json({
+            success: true,
+            articles,
+            total: articles.length,
+            sheetId,
+            source: "csv_export"
+          });
+        }
+      }
+    }
+
+    // Attempt 2: Try GViz API
+    const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
+    const gvizRes = await fetch(gvizUrl);
+    if (gvizRes.ok) {
+      const gvizText = await gvizRes.text();
+      const match = gvizText.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
+      if (match && match[1]) {
+        const json = JSON.parse(match[1]);
+        const cols = (json.table?.cols || []).map((c: any) => c.label || c.id || "");
+        const rows = (json.table?.rows || []).map((r: any) => {
+          return (r.c || []).map((cell: any) => cell ? (cell.f || cell.v || "") : "");
+        });
+
+        if (rows.length > 0) {
+          const articles = rowsToDefenseNews(cols, rows);
+          if (articles.length > 0) {
+            return res.json({
+              success: true,
+              articles,
+              total: articles.length,
+              sheetId,
+              source: "gviz"
+            });
+          }
+        }
+      }
+    }
+
+    return res.json({
+      success: false,
+      isPrivate: true,
+      error: "구글 시트가 '제한됨'으로 보호되어 있습니다. 구글 시트에서 [공유] → [링크가 있는 모든 사용자(뷰어)]로 설정하시면 별도의 구글 로그인 없이 즉시 자동 동기화됩니다.",
+      sheetUrl: `https://docs.google.com/spreadsheets/d/${sheetId}/edit`
+    });
+  } catch (err: any) {
+    console.error("Server sheet fetch error:", err);
+    res.json({
+      success: false,
+      error: `시트 데이터 수신 중 오류 발생: ${err.message}`
+    });
+  }
+});
+
 // API route to get real-time AI-grounded defense news
 app.post("/api/defense-news/live", async (req, res) => {
   try {
