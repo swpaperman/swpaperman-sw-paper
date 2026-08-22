@@ -621,3 +621,216 @@ export async function syncBulkDatabaseToWorkspace(
     return { success: false, count: 0 };
   }
 }
+
+// ----------------------------------------------------
+// K-Defense News Google Sheet Monitoring Synchronization
+// ----------------------------------------------------
+
+export const DEFAULT_DEFENSE_NEWS_SHEET_ID = "1DlMYbO55PuV1PEfeLrIsZJLGUpb2NgySEjZMcYgLY9Q";
+
+export interface DefenseNewsSheetRow {
+  id: string;
+  tab: "suwon" | "domestic" | "global";
+  category: string;
+  title: string;
+  summary: string;
+  source: string;
+  date: string;
+  url: string;
+  imageUrl?: string;
+  coreSummary: string;
+  bodyText: string;
+  perspective: string;
+}
+
+/**
+ * Parses Google Sheets 2D array or GViz JSON into structured Defense News items
+ */
+export function parseSheetRowsToNews(headers: string[], rows: any[][]): DefenseNewsSheetRow[] {
+  if (!rows || rows.length === 0) return [];
+
+  // Normalize header names to lowercase trimmed
+  const normHeaders = headers.map(h => String(h || "").trim().toLowerCase().replace(/\s+/g, ""));
+  
+  // Find column indices by multiple possible aliases
+  const findCol = (keywords: string[]) => {
+    return normHeaders.findIndex(h => keywords.some(k => h.includes(k.toLowerCase())));
+  };
+
+  const colDate = findCol(["일자", "날짜", "date", "작성일", "등록일", "시간", "time"]);
+  const colTitle = findCol(["기사제목", "제목", "title", "뉴스제목", "헤드라인", "headline"]);
+  const colSource = findCol(["언론사", "출처", "source", "미디어", "매체", "신문사", "기관"]);
+  const colSummary = findCol(["요약", "기사요약", "summary", "개요", "줄거리"]);
+  const colBody = findCol(["본문", "상세요약", "body", "내용", "본문내용", "상세내용", "content"]);
+  const colUrl = findCol(["링크", "url", "원문", "기사링크", "기사url", "link"]);
+  const colCategory = findCol(["분류", "카테고리", "category", "주제", "섹션", "구분"]);
+  const colImage = findCol(["이미지", "사진", "image", "img", "썸네일", "thumbnail"]);
+  const colCore = findCol(["핵심", "핵심요약", "core", "keypoint", "쟁점", "포인트"]);
+  const colPerspective = findCol(["수원지관", "시사점", "제조관점", "perspective", "논평", "코멘트", "지관관점"]);
+
+  return rows.map((row, idx) => {
+    // Extract raw values with fallback
+    const rawDate = colDate >= 0 ? String(row[colDate] || "") : "";
+    const rawTitle = colTitle >= 0 ? String(row[colTitle] || "") : "";
+    const rawSource = colSource >= 0 ? String(row[colSource] || "") : "K-방산 뉴스 모니터링";
+    const rawSummary = colSummary >= 0 ? String(row[colSummary] || "") : "";
+    const rawBody = colBody >= 0 ? String(row[colBody] || "") : "";
+    const rawUrl = colUrl >= 0 ? String(row[colUrl] || "") : "";
+    const rawCategory = colCategory >= 0 ? String(row[colCategory] || "") : "국내 방산기업";
+    const rawImage = colImage >= 0 ? String(row[colImage] || "") : "";
+    const rawCore = colCore >= 0 ? String(row[colCore] || "") : "";
+    const rawPerspective = colPerspective >= 0 ? String(row[colPerspective] || "") : "";
+
+    // Skip completely empty rows
+    if (!rawTitle && !rawSummary && !rawBody) {
+      return null;
+    }
+
+    // Format date string to YYYY-MM-DD
+    let cleanDate = rawDate.trim();
+    if (cleanDate.includes(".")) {
+      const parts = cleanDate.split(".").map(p => p.trim()).filter(Boolean);
+      if (parts.length === 3) {
+        cleanDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+      }
+    } else if (cleanDate.includes("/")) {
+      const parts = cleanDate.split("/").map(p => p.trim()).filter(Boolean);
+      if (parts.length === 3) {
+        cleanDate = `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+      }
+    }
+    if (!cleanDate || cleanDate.length < 5) {
+      cleanDate = new Date().toISOString().split("T")[0];
+    }
+
+    // Determine tab and category
+    let tab: "suwon" | "domestic" | "global" = "domestic";
+    const lowerCat = rawCategory.toLowerCase();
+    const lowerTitle = rawTitle.toLowerCase();
+    if (lowerCat.includes("수원") || lowerTitle.includes("수원지관")) {
+      tab = "suwon";
+    } else if (lowerCat.includes("글로벌") || lowerCat.includes("해외") || lowerCat.includes("nato") || lowerCat.includes("미국") || lowerCat.includes("유럽") || lowerCat.includes("global")) {
+      tab = "global";
+    } else {
+      tab = "domestic";
+    }
+
+    // Default high-grade Unsplash image by topic
+    let finalImageUrl = rawImage.trim();
+    if (!finalImageUrl || !finalImageUrl.startsWith("http")) {
+      if (tab === "suwon") {
+        finalImageUrl = "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80";
+      } else if (tab === "global") {
+        finalImageUrl = "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=600&q=80";
+      } else if (lowerTitle.includes("포탄") || lowerTitle.includes("탄약") || lowerTitle.includes("155")) {
+        finalImageUrl = "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=600&q=80";
+      } else {
+        finalImageUrl = "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80";
+      }
+    }
+
+    // Default high-context manufacturing perspective if omitted in spreadsheet
+    const finalPerspective = rawPerspective.trim() || 
+      "탄약 생산과 공급이 확대될수록 탄약의 보관, 수송, 취급 과정에서 포장재의 역할은 더욱 중요해집니다. 수원지관산업의 60년 방산규격 지환통 가공 및 고도 방습 코팅 원천 기술은 추진제와 화약의 장기 야전 보존 신뢰성을 완벽하게 보장합니다.";
+
+    const finalSummary = rawSummary.trim() || rawBody.slice(0, 120) || rawTitle;
+    const finalCore = rawCore.trim() || finalSummary.slice(0, 80);
+    const finalBody = rawBody.trim() || rawSummary || rawTitle;
+
+    const item: DefenseNewsSheetRow = {
+      id: `news-sheet-${cleanDate.replace(/-/g, '')}-${idx + 1}`,
+      tab,
+      category: rawCategory.trim() || (tab === "global" ? "글로벌 방산시장" : "국내 방산기업"),
+      title: rawTitle.trim() || `K-방산 모니터링 뉴스 (${cleanDate})`,
+      summary: finalSummary,
+      source: rawSource.trim() || "K-방산 뉴스 모니터링",
+      date: cleanDate,
+      url: rawUrl.trim() || "https://www.combat-packaging.com",
+      imageUrl: finalImageUrl,
+      coreSummary: finalCore,
+      bodyText: finalBody,
+      perspective: finalPerspective
+    };
+
+    return item;
+  }).filter((item): item is DefenseNewsSheetRow => Boolean(item));
+}
+
+/**
+ * Fetch and synchronize defense news from the designated Google Sheet
+ */
+export async function fetchDefenseNewsFromGoogleSheet(
+  sheetId: string = DEFAULT_DEFENSE_NEWS_SHEET_ID,
+  accessToken?: string | null
+): Promise<{ success: boolean; articles: DefenseNewsSheetRow[]; error?: string; sourceMode: "api" | "gviz" | "fallback" }> {
+  const targetSheetId = sheetId.trim() || DEFAULT_DEFENSE_NEWS_SHEET_ID;
+
+  // 1. Try Official Google Sheets API v4 if Access Token is present
+  if (accessToken) {
+    try {
+      const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${targetSheetId}/values/A1:Z500`;
+      const response = await fetch(apiUrl, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+
+      if (response.ok) {
+        const sheetData = await response.json();
+        const values: any[][] = sheetData.values || [];
+        if (values.length > 1) {
+          const headers = values[0];
+          const dataRows = values.slice(1);
+          const parsedArticles = parseSheetRowsToNews(headers, dataRows);
+          if (parsedArticles.length > 0) {
+            return {
+              success: true,
+              articles: parsedArticles,
+              sourceMode: "api"
+            };
+          }
+        }
+      }
+    } catch (apiErr: any) {
+      console.warn("Google Sheets v4 API fetch failed, trying alternate methods:", apiErr);
+    }
+  }
+
+  // 2. Try Public GViz JSON Endpoint
+  try {
+    const gvizUrl = `https://docs.google.com/spreadsheets/d/${targetSheetId}/gviz/tq?tqx=out:json`;
+    const gvizRes = await fetch(gvizUrl);
+    if (gvizRes.ok) {
+      const text = await gvizRes.text();
+      // GViz wraps JSON in /*O_o*/ google.visualization.Query.setResponse({...});
+      const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
+      if (match && match[1]) {
+        const json = JSON.parse(match[1]);
+        const cols = (json.table?.cols || []).map((c: any) => c.label || c.id || "");
+        const rows = (json.table?.rows || []).map((r: any) => {
+          return (r.c || []).map((cell: any) => cell ? (cell.f || cell.v || "") : "");
+        });
+
+        if (rows.length > 0) {
+          const parsedArticles = parseSheetRowsToNews(cols, rows);
+          if (parsedArticles.length > 0) {
+            return {
+              success: true,
+              articles: parsedArticles,
+              sourceMode: "gviz"
+            };
+          }
+        }
+      }
+    }
+  } catch (gvizErr) {
+    console.warn("GViz JSON endpoint fetch failed:", gvizErr);
+  }
+
+  // 3. If sheet requires auth and no token is present or read failed, report clear instruction
+  return {
+    success: false,
+    articles: [],
+    error: "구글 시트 접근 권한이 필요합니다. 상단의 [Google 로그인]을 진행하시면 비공개 시트에서도 최신 8월 22일 뉴스 및 실시간 모니터링 데이터를 안전하게 즉시 불러옵니다.",
+    sourceMode: "fallback"
+  };
+}
+
