@@ -122,6 +122,7 @@ const DEFAULT_STOCKS: StockItem[] = [
 ];
 
 const LOCAL_CUSTOM_STOCKS_KEY = "suwon_custom_stocks_backup";
+const LOCAL_DELETED_STOCKS_KEY = "suwon_deleted_stocks_backup";
 
 const getSavedCustomStocks = (): Record<string, StockItem> => {
   try {
@@ -151,6 +152,66 @@ const removeCustomStockItem = (id: string) => {
   } catch (err) {
     console.warn("Could not remove custom stock from local storage:", err);
   }
+};
+
+const getSavedDeletedStockIds = (): string[] => {
+  try {
+    const raw = localStorage.getItem(LOCAL_DELETED_STOCKS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+const addDeletedStockId = (id: string) => {
+  try {
+    const list = getSavedDeletedStockIds();
+    if (!list.includes(id)) {
+      list.push(id);
+      localStorage.setItem(LOCAL_DELETED_STOCKS_KEY, JSON.stringify(list));
+    }
+  } catch (err) {
+    console.warn("Could not save deleted stock ID:", err);
+  }
+};
+
+const removeDeletedStockId = (id: string) => {
+  try {
+    const list = getSavedDeletedStockIds().filter(i => i !== id);
+    localStorage.setItem(LOCAL_DELETED_STOCKS_KEY, JSON.stringify(list));
+  } catch (err) {
+    console.warn("Could not remove deleted stock ID:", err);
+  }
+};
+
+// Generates guaranteed next unique ID checking DEFAULT_STOCKS, current stocks in state, and local backups
+const getNextStockId = (currentStocks: StockItem[]): string => {
+  const customBackupMap = getSavedCustomStocks();
+  const allIds = new Set<string>([
+    ...DEFAULT_STOCKS.map(s => s.id),
+    ...currentStocks.map(s => s.id),
+    ...Object.keys(customBackupMap)
+  ]);
+
+  let maxNum = 0;
+  allIds.forEach(id => {
+    const match = id.match(/STK-(\d+)/i);
+    if (match && match[1]) {
+      const num = parseInt(match[1], 10);
+      if (!isNaN(num) && num > maxNum) {
+        maxNum = num;
+      }
+    }
+  });
+
+  const nextNum = maxNum + 1;
+  let candidateId = `STK-${String(nextNum).padStart(3, "0")}`;
+  let counter = nextNum;
+  while (allIds.has(candidateId)) {
+    counter++;
+    candidateId = `STK-${String(counter).padStart(3, "0")}`;
+  }
+  return candidateId;
 };
 
 const IMAGE_PRESETS = [
@@ -190,22 +251,30 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
         if (!isMounted) return;
 
         const customBackupMap = getSavedCustomStocks();
+        const deletedIds = getSavedDeletedStockIds();
 
         if (snapshot.empty) {
           // If Firestore is confirmed completely empty on the server, seed defaults merged with custom backups
-          const initialList = DEFAULT_STOCKS.map(item => {
-            if (customBackupMap[item.id]) {
-              return customBackupMap[item.id];
+          const initialList: StockItem[] = [];
+
+          DEFAULT_STOCKS.forEach(item => {
+            if (!deletedIds.includes(item.id)) {
+              if (customBackupMap[item.id]) {
+                initialList.push(customBackupMap[item.id]);
+              } else {
+                initialList.push(item);
+              }
             }
-            return item;
           });
 
           // Add any newly registered custom items from backup
           Object.values(customBackupMap).forEach(customItem => {
-            if (!initialList.some(i => i.id === customItem.id)) {
+            if (!deletedIds.includes(customItem.id) && !initialList.some(i => i.id === customItem.id)) {
               initialList.push(customItem);
             }
           });
+
+          initialList.sort((a, b) => a.id.localeCompare(b.id));
 
           if (!snapshot.metadata.fromCache) {
             try {
@@ -222,10 +291,16 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
           snapshot.forEach((docSnap) => {
             const data = docSnap.data();
             const id = docSnap.id;
+
+            // Skip if deleted by user
+            if (deletedIds.includes(id)) {
+              return;
+            }
+
             // If there is an admin-modified custom backup in local storage, protect it
             const customBackup = customBackupMap[id];
             if (customBackup && (customBackup.isCustom || data.isCustom)) {
-              list.push({ ...customBackup, ...data, isCustom: true });
+              list.push({ ...data, ...customBackup, id, isCustom: true });
             } else {
               list.push({
                 id: docSnap.id,
@@ -236,7 +311,7 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                 quantity: data.quantity || "",
                 condition: data.condition || "우수",
                 approxPrice: data.approxPrice || "상담 협의",
-                imageUrl: data.imageUrl || "https://images.unsplash.com/photo-1589793907316-f9d994350c3e?auto=format&fit=crop&q=80&w=650",
+                imageUrl: data.imageUrl || IMAGE_PRESETS[0].url,
                 imageUrls: data.imageUrls || [],
                 desc: data.desc || "",
                 isCustom: data.isCustom || false
@@ -246,8 +321,8 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
 
           // Also merge any offline custom items not yet in Firestore
           Object.values(customBackupMap).forEach(customItem => {
-            if (!list.some(i => i.id === customItem.id)) {
-              list.unshift(customItem);
+            if (!deletedIds.includes(customItem.id) && !list.some(i => i.id === customItem.id)) {
+              list.push(customItem);
             }
           });
 
@@ -262,12 +337,22 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
         // Fallback to DEFAULT_STOCKS merged with custom backup
         if (isMounted) {
           const customBackupMap = getSavedCustomStocks();
-          const fallbackList = DEFAULT_STOCKS.map(item => customBackupMap[item.id] || item);
-          Object.values(customBackupMap).forEach(customItem => {
-            if (!fallbackList.some(i => i.id === customItem.id)) {
-              fallbackList.unshift(customItem);
+          const deletedIds = getSavedDeletedStockIds();
+          const fallbackList: StockItem[] = [];
+          
+          DEFAULT_STOCKS.forEach(item => {
+            if (!deletedIds.includes(item.id)) {
+              fallbackList.push(customBackupMap[item.id] || item);
             }
           });
+
+          Object.values(customBackupMap).forEach(customItem => {
+            if (!deletedIds.includes(customItem.id) && !fallbackList.some(i => i.id === customItem.id)) {
+              fallbackList.push(customItem);
+            }
+          });
+
+          fallbackList.sort((a, b) => a.id.localeCompare(b.id));
           setStocks(fallbackList);
           setIsLoading(false);
         }
@@ -686,8 +771,8 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
   };
 
   const openAddModal = () => {
-    const nextNum = stocks.length + 1;
-    setFormId(`STK-${String(nextNum).padStart(3, "0")}`);
+    const uniqueId = getNextStockId(stocks);
+    setFormId(uniqueId);
     setFormName("");
     setFormInnerDia("");
     setFormThickness("");
@@ -720,8 +805,17 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
 
   const handleCreateStock = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Verify ID is completely unique and does not collide with any existing product
+    let finalId = formId ? formId.trim() : "";
+    if (!finalId || stocks.some(s => s.id === finalId)) {
+      finalId = getNextStockId(stocks);
+    }
+
+    removeDeletedStockId(finalId);
+
     const newStock: StockItem = {
-      id: formId || `STK-${Date.now()}`,
+      id: finalId,
       name: formName || "",
       innerDia: formInnerDia || "",
       thickness: formThickness || "",
@@ -729,20 +823,31 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
       quantity: formQuantity || "",
       condition: formCondition || "최우수",
       approxPrice: formApproxPrice || "상담 협의",
-      imageUrl: formImageUrl || "https://images.unsplash.com/photo-1589793907316-f9d994350c3e?auto=format&fit=crop&q=80&w=650",
+      imageUrl: formImageUrl || IMAGE_PRESETS[0].url,
       imageUrls: formImageUrls || [],
       desc: formDesc || `${formName} 제품에 대한 상세한 현물 대응 긴급 수권 지관 정보입니다.`,
       isCustom: true
     };
+
+    // 1. Immediately save to local backup
     saveCustomStockItem(newStock);
+
+    // 2. Immediately update state so it appears in the list instantly
+    setStocks(prev => {
+      const filtered = prev.filter(item => item.id !== finalId);
+      const nextList = [newStock, ...filtered].sort((a, b) => a.id.localeCompare(b.id));
+      return nextList;
+    });
+
+    setShowAddModal(false);
+
+    // 3. Persist to Firestore
     try {
       await setDoc(doc(db, "stocks", newStock.id), newStock);
-      setShowAddModal(false);
-      alert(language === "ko" ? "자재가 정상 등록되었습니다." : "Product successfully categorized.");
+      alert(language === "ko" ? `신규 제품 [${newStock.id}]이(가) 정상 등록되었습니다.` : `Product [${newStock.id}] successfully added.`);
     } catch (err) {
-      console.error("Error creating stock:", err);
-      setShowAddModal(false);
-      alert(language === "ko" ? "자재가 로컬 저장소에 안전하게 등록되었습니다." : "Product registered locally.");
+      console.error("Error creating stock in Firestore:", err);
+      alert(language === "ko" ? `신규 제품 [${newStock.id}]이(가) 로컬 저장소에 안전하게 등록되었습니다.` : `Product [${newStock.id}] registered locally.`);
     }
   };
 
@@ -751,24 +856,22 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
       isOpen: true,
       title: language === "ko" ? "제품 삭제 경고" : "Delete Product Confirmation",
       message: language === "ko" 
-        ? `제품 코드 ${id} 항목을 정말로 영구 삭제하시겠습니까?` 
-        : `Are you entirely sure you want to permanently delete product profile ${id}?`,
+        ? `제품 코드 [${id}] 항목을 정말로 영구 삭제하시겠습니까?` 
+        : `Are you entirely sure you want to permanently delete product profile [${id}]?`,
       confirmText: language === "ko" ? "영구 삭제 실행" : "Delete Permanently",
       cancelText: language === "ko" ? "취소" : "Cancel",
       type: "danger",
       onConfirm: async () => {
+        addDeletedStockId(id);
         removeCustomStockItem(id);
+        setStocks(prev => prev.filter(item => item.id !== id));
+        if (selectedStock && selectedStock.id === id) {
+          setSelectedStock(null);
+        }
         try {
           await deleteDoc(doc(db, "stocks", id));
-          if (selectedStock && selectedStock.id === id) {
-            setSelectedStock(null);
-          }
         } catch (err) {
           console.error("Error deleting stock:", err);
-          setStocks(prev => prev.filter(item => item.id !== id));
-          if (selectedStock && selectedStock.id === id) {
-            setSelectedStock(null);
-          }
         }
       }
     });
@@ -782,8 +885,10 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
 
   const handleUpdateStock = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formId) return;
+
     const editedStock: StockItem = {
-      id: formId || "",
+      id: formId,
       name: formName || "",
       innerDia: formInnerDia || "",
       thickness: formThickness || "",
@@ -791,21 +896,21 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
       quantity: formQuantity || "",
       condition: formCondition || "최우수",
       approxPrice: formApproxPrice || "상담 협의",
-      imageUrl: formImageUrl || "https://images.unsplash.com/photo-1589793907316-f9d994350c3e?auto=format&fit=crop&q=80&w=650",
+      imageUrl: formImageUrl || IMAGE_PRESETS[0].url,
       imageUrls: formImageUrls || [],
       desc: formDesc || "",
       isCustom: true
     };
+
     saveCustomStockItem(editedStock);
+    setStocks(prev => prev.map(item => item.id === formId ? editedStock : item));
+    setShowEditModal(false);
+    setEditingIndex(null);
+
     try {
       await setDoc(doc(db, "stocks", formId), editedStock);
-      setShowEditModal(false);
-      setEditingIndex(null);
     } catch (err) {
-      console.error("Error updating stock:", err);
-      setStocks(prev => prev.map(item => item.id === formId ? editedStock : item));
-      setShowEditModal(false);
-      setEditingIndex(null);
+      console.error("Error updating stock in Firestore:", err);
     }
   };
 
@@ -821,6 +926,10 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
       type: "warning",
       onConfirm: async () => {
         try {
+          localStorage.removeItem(LOCAL_CUSTOM_STOCKS_KEY);
+          localStorage.removeItem(LOCAL_DELETED_STOCKS_KEY);
+          setStocks(DEFAULT_STOCKS);
+
           const querySnapshot = await getDocs(collection(db, "stocks"));
           for (const docSnap of querySnapshot.docs) {
             await deleteDoc(doc(db, "stocks", docSnap.id));
