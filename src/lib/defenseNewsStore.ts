@@ -196,6 +196,43 @@ export const DEFAULT_DEFENSE_NEWS: DefenseNewsItem[] = [
 
 const LOCAL_STORAGE_KEY = "sw_defense_news";
 const LOCAL_CUSTOM_NEWS_KEY = "sw_defense_custom_news_map";
+const LOCAL_DELETED_NEWS_KEY = "sw_defense_deleted_ids";
+
+// Helper to get deleted news IDs list
+export function getLocalDeletedNewsIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(LOCAL_DELETED_NEWS_KEY);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        return new Set(arr);
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return new Set<string>();
+}
+
+export function saveLocalDeletedNewsId(id: string): void {
+  try {
+    const set = getLocalDeletedNewsIds();
+    set.add(id);
+    localStorage.setItem(LOCAL_DELETED_NEWS_KEY, JSON.stringify(Array.from(set)));
+  } catch (err) {
+    console.warn("Failed to save deleted news ID:", err);
+  }
+}
+
+export function removeLocalDeletedNewsId(id: string): void {
+  try {
+    const set = getLocalDeletedNewsIds();
+    set.delete(id);
+    localStorage.setItem(LOCAL_DELETED_NEWS_KEY, JSON.stringify(Array.from(set)));
+  } catch (err) {
+    console.warn("Failed to remove deleted news ID:", err);
+  }
+}
 
 // Helper to get custom news overrides map from localStorage
 export function getLocalCustomNewsMap(): Record<string, DefenseNewsItem> {
@@ -232,48 +269,93 @@ export function removeLocalCustomNews(id: string): void {
   }
 }
 
+function normalizeTitle(title: string): string {
+  return (title || "").toLowerCase().replace(/[^a-z0-9가-힣]/g, "").trim();
+}
+
 /**
  * Merges base items with custom items and Firestore items cleanly:
- * - Admin custom items (isCustom = true) ALWAYS take precedence and are NEVER overwritten.
- * - Base items are included unless explicitly overridden.
+ * - Admin custom items (isCustom = true) ALWAYS take precedence and are NEVER overwritten by sheets or defaults.
+ * - Matching occurs by both ID and normalized title.
+ * - Deleted items are filtered out.
  */
 export function mergeNewsSafely(
   baseList: DefenseNewsItem[],
-  customMap: Record<string, DefenseNewsItem>,
-  firestoreList: DefenseNewsItem[] = []
+  customMap: Record<string, DefenseNewsItem> = {},
+  firestoreList: DefenseNewsItem[] = [],
+  deletedIds: Set<string> = new Set()
 ): DefenseNewsItem[] {
+  const customItemsById = new Map<string, DefenseNewsItem>();
+  const customItemsByTitle = new Map<string, DefenseNewsItem>();
+
+  // Collect Firestore custom items
+  firestoreList.forEach((item) => {
+    if (item && item.id && !deletedIds.has(item.id)) {
+      const customItem = { ...item, isCustom: true };
+      customItemsById.set(item.id, customItem);
+      if (item.title) {
+        customItemsByTitle.set(normalizeTitle(item.title), customItem);
+      }
+    }
+  });
+
+  // Collect local custom items (Highest precedence)
+  Object.values(customMap).forEach((item) => {
+    if (item && item.id && !deletedIds.has(item.id)) {
+      const customItem = { ...item, isCustom: true };
+      customItemsById.set(item.id, customItem);
+      if (item.title) {
+        customItemsByTitle.set(normalizeTitle(item.title), customItem);
+      }
+    }
+  });
+
   const resultMap = new Map<string, DefenseNewsItem>();
 
-  // 1. Add base list
-  baseList.forEach((item) => {
-    resultMap.set(item.id, item);
+  // Process incoming base or sheet items
+  baseList.forEach((baseItem) => {
+    if (!baseItem || !baseItem.id || deletedIds.has(baseItem.id)) return;
+
+    // Check if there is a custom override by ID
+    if (customItemsById.has(baseItem.id)) {
+      resultMap.set(baseItem.id, customItemsById.get(baseItem.id)!);
+      return;
+    }
+
+    // Check if there is a custom override by normalized Title
+    const normTitle = normalizeTitle(baseItem.title);
+    if (normTitle && customItemsByTitle.has(normTitle)) {
+      const customOverride = customItemsByTitle.get(normTitle)!;
+      resultMap.set(customOverride.id, customOverride);
+      return;
+    }
+
+    resultMap.set(baseItem.id, baseItem);
   });
 
-  // 2. Overlay firestore list
-  firestoreList.forEach((item) => {
-    resultMap.set(item.id, item);
-  });
-
-  // 3. Overlay local admin custom map (Highest precedence)
-  Object.values(customMap).forEach((customItem) => {
-    resultMap.set(customItem.id, customItem);
+  // Ensure all custom items (even if not in baseList) are present
+  customItemsById.forEach((customItem, id) => {
+    if (!deletedIds.has(id)) {
+      resultMap.set(id, customItem);
+    }
   });
 
   const list = Array.from(resultMap.values());
-  return list.sort((a, b) => b.date.localeCompare(a.date));
+  return list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 }
 
 export function getStoredDefenseNews(): DefenseNewsItem[] {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
     const customMap = getLocalCustomNewsMap();
+    const deletedIds = getLocalDeletedNewsIds();
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return mergeNewsSafely(parsed, customMap);
+        return mergeNewsSafely(parsed, customMap, [], deletedIds);
       }
     }
-    return mergeNewsSafely(DEFAULT_DEFENSE_NEWS, customMap);
+    return mergeNewsSafely(DEFAULT_DEFENSE_NEWS, customMap, [], deletedIds);
   } catch (e) {
     console.warn("Failed to load defense news from localStorage:", e);
   }
@@ -283,7 +365,6 @@ export function getStoredDefenseNews(): DefenseNewsItem[] {
 export function saveDefenseNewsToStorage(news: DefenseNewsItem[]): void {
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(news));
-    localStorage.setItem("sw_defense_last_sync_time", new Date().toLocaleTimeString());
   } catch (e) {
     console.warn("Failed to save defense news to localStorage:", e);
   }
@@ -301,6 +382,7 @@ export async function saveDefenseNewsItem(article: DefenseNewsItem): Promise<voi
 
   // 1. Save locally
   saveLocalCustomNews(itemToSave);
+  removeLocalDeletedNewsId(itemToSave.id);
 
   // 2. Save to Firestore
   try {
@@ -314,8 +396,9 @@ export async function saveDefenseNewsItem(article: DefenseNewsItem): Promise<voi
  * Deletes an article from Firestore and local storage.
  */
 export async function deleteDefenseNewsItem(id: string): Promise<void> {
-  // 1. Remove locally
+  // 1. Record deletion locally
   removeLocalCustomNews(id);
+  saveLocalDeletedNewsId(id);
 
   // 2. Delete from Firestore
   try {

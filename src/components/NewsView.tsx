@@ -27,20 +27,34 @@ import {
   AlertCircle,
   Settings,
   Download,
-  LogIn
+  LogIn,
+  Upload,
+  Image as ImageIcon,
+  Check,
+  ShieldCheck
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useLanguage } from "../context/LanguageContext";
+import { useAdmin } from "../context/AdminContext";
 import { trackNewsView, trackCTAClick } from "../lib/ga4";
 import { 
   DEFAULT_DEFENSE_NEWS_SHEET_ID, 
   fetchDefenseNewsFromGoogleSheet, 
   googleSignIn, 
-  getAccessToken 
+  getAccessToken,
+  db
 } from "../lib/googleWorkspace";
+import { collection, onSnapshot } from "firebase/firestore";
 import { 
   DEFAULT_DEFENSE_NEWS, 
-  DefenseNewsItem 
+  DefenseNewsItem,
+  getStoredDefenseNews,
+  saveDefenseNewsToStorage,
+  saveDefenseNewsItem,
+  deleteDefenseNewsItem,
+  mergeNewsSafely,
+  getLocalCustomNewsMap,
+  getLocalDeletedNewsIds
 } from "../lib/defenseNewsStore";
 
 const defensePartners = [
@@ -142,20 +156,7 @@ const defensePartners = [
   }
 ];
 
-interface NewsArticle {
-  id: string;
-  tab: "suwon" | "domestic" | "global";
-  category: string;
-  title: string;
-  summary: string;
-  source: string;
-  date: string;
-  url: string;
-  imageUrl?: string;   // 기사 대표 이미지
-  coreSummary: string; // 핵심 요약
-  bodyText: string;    // 본문 요약
-  perspective: string; // 수원지관산업 제조 관점
-}
+type NewsArticle = DefenseNewsItem;
 
 interface NewsViewProps {
   onTabChange: (tab: string) => void;
@@ -163,35 +164,49 @@ interface NewsViewProps {
 
 export default function NewsView({ onTabChange }: NewsViewProps) {
   const { language, t } = useLanguage();
+  const { isAdmin, loginAdmin, logoutAdmin: contextLogoutAdmin } = useAdmin();
+
+  // Firestore defense_news synchronized state
+  const [firestoreArticles, setFirestoreArticles] = useState<DefenseNewsItem[]>([]);
 
   // Load from LocalStorage or Fallback to Google Sheet factual news
-  const [articles, setArticles] = useState<NewsArticle[]>(() => {
-    const saved = localStorage.getItem("sw_defense_news");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Check for outdated mock articles and filter them out
-          const cleaned = parsed.filter((art: any) => {
-            if (!art || !art.title) return false;
-            // Remove mock items from old tests
-            if (art.id?.startsWith("news-sw-20260822-") || art.id === "news-1" || art.id === "news-2") return false;
-            return true;
-          });
-          if (cleaned.length > 0) {
-            return cleaned;
-          }
-        }
-      } catch (err) {
-        console.warn("Failed to load stored news:", err);
-      }
-    }
-    return DEFAULT_DEFENSE_NEWS as NewsArticle[];
+  const [articles, setArticles] = useState<DefenseNewsItem[]>(() => {
+    return getStoredDefenseNews();
   });
+
+  // Real-time Firestore sync listener for defense news
+  useEffect(() => {
+    try {
+      const q = collection(db, "defense_news");
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const list: DefenseNewsItem[] = [];
+          snapshot.forEach((docSnap) => {
+            list.push(docSnap.data() as DefenseNewsItem);
+          });
+          setFirestoreArticles(list);
+          if (list.length > 0) {
+            setArticles((prev) => {
+              const customMap = getLocalCustomNewsMap();
+              const deletedIds = getLocalDeletedNewsIds();
+              return mergeNewsSafely(prev, customMap, list, deletedIds);
+            });
+          }
+        },
+        (err) => {
+          console.warn("Firestore defense_news subscription error:", err);
+        }
+      );
+      return () => unsubscribe();
+    } catch (err) {
+      console.warn("Firestore initialization warning:", err);
+    }
+  }, []);
 
   // Save to LocalStorage whenever articles change
   useEffect(() => {
-    localStorage.setItem("sw_defense_news", JSON.stringify(articles));
+    saveDefenseNewsToStorage(articles);
   }, [articles]);
 
   // Google Sheets Synchronization States
@@ -210,7 +225,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
   const [sheetInputVal, setSheetInputVal] = useState(sheetId);
   const [googleUserEmail, setGoogleUserEmail] = useState<string | null>(null);
 
-  // Synchronize from Google Sheet
+  // Synchronize from Google Sheet - with strict custom edits preservation!
   const syncWithGoogleSheet = async (forceAuth = false) => {
     setIsSyncingSheet(true);
     setSheetSyncError(null);
@@ -236,17 +251,11 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
     try {
       const result = await fetchDefenseNewsFromGoogleSheet(sheetId, token);
       if (result.success && result.articles.length > 0) {
-        // Merge fetched sheet articles into state
-        setArticles(prev => {
-          const newSheetIds = new Set(result.articles.map(a => a.id));
-          const newSheetTitles = new Set(result.articles.map(a => a.title.trim()));
-          
-          // Remove existing items that duplicate the new sheet items
-          const filteredPrev = prev.filter(a => !newSheetIds.has(a.id) && !newSheetTitles.has(a.title.trim()));
-          const merged = [...result.articles, ...filteredPrev];
-
-          // Sort by date descending
-          return merged.sort((a, b) => b.date.localeCompare(a.date));
+        // Merge fetched sheet articles into state while strictly preserving user-customized items
+        setArticles((prev) => {
+          const customMap = getLocalCustomNewsMap();
+          const deletedIds = getLocalDeletedNewsIds();
+          return mergeNewsSafely(result.articles, customMap, firestoreArticles, deletedIds);
         });
 
         const nowTimeStr = `${new Date().toLocaleDateString('ko-KR')} ${new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`;
@@ -294,7 +303,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
       const headers = rawRows[0];
       const dataRows = rawRows.length > 1 ? rawRows.slice(1) : rawRows;
       
-      const newArticles: NewsArticle[] = dataRows.map((row, idx) => {
+      const newArticles: DefenseNewsItem[] = dataRows.map((row, idx) => {
         const title = row[0]?.trim() || `K-방산 모니터링 뉴스 ${idx + 1}`;
         const summary = row[1]?.trim() || row[0]?.trim() || "";
         const source = row[2]?.trim() || "K-방산 뉴스 모니터링";
@@ -317,14 +326,18 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
           imageUrl: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=600&q=80",
           coreSummary: core,
           bodyText: body,
-          perspective: persp
+          perspective: persp,
+          isCustom: true,
+          updatedAt: new Date().toISOString()
         };
       }).filter(a => Boolean(a.title));
 
       if (newArticles.length > 0) {
+        newArticles.forEach(item => saveDefenseNewsItem(item));
         setArticles(prev => {
-          const merged = [...newArticles, ...prev];
-          return merged.sort((a, b) => b.date.localeCompare(a.date));
+          const customMap = getLocalCustomNewsMap();
+          const deletedIds = getLocalDeletedNewsIds();
+          return mergeNewsSafely([...newArticles, ...prev], customMap, firestoreArticles, deletedIds);
         });
         const nowTimeStr = `${new Date().toLocaleDateString('ko-KR')} ${new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`;
         setLastSyncTime(nowTimeStr);
@@ -373,10 +386,11 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTabFilter, setActiveTabFilter] = useState<"all" | "suwon" | "domestic" | "global">("all");
   const [selectedSubCategory, setSelectedSubCategory] = useState<string>("all");
-  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+  const [selectedArticle, setSelectedArticle] = useState<DefenseNewsItem | null>(null);
 
-  // Admin Mode State
-  const [isAdminMode, setIsAdminMode] = useState(false);
+  // Admin Mode State (supports both context auth and local session)
+  const [localAdminAuth, setLocalAdminAuth] = useState(false);
+  const effectiveIsAdmin = isAdmin || localAdminAuth;
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -435,20 +449,30 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
 
   const handleAdminAccess = (e: React.FormEvent) => {
     e.preventDefault();
-    const storedPass = localStorage.getItem("suwon_admin_passcode") || "swpaper7638**";
-    if (adminPassword === storedPass) {
-      setIsAdminMode(true);
+    const success = loginAdmin(adminPassword);
+    if (success) {
+      setLocalAdminAuth(true);
       setShowAdminLogin(false);
       setAdminPassword("");
       setLoginError("");
       showNotification("관리자 콘솔 모드가 활성화되었습니다.");
     } else {
-      setLoginError("인증 정보가 바르지 않습니다.");
+      const storedPass = localStorage.getItem("suwon_admin_passcode") || "swpaper7638**";
+      if (adminPassword === storedPass) {
+        setLocalAdminAuth(true);
+        setShowAdminLogin(false);
+        setAdminPassword("");
+        setLoginError("");
+        showNotification("관리자 콘솔 모드가 활성화되었습니다.");
+      } else {
+        setLoginError("인증 정보가 바르지 않습니다.");
+      }
     }
   };
 
   const logoutAdmin = () => {
-    setIsAdminMode(false);
+    setLocalAdminAuth(false);
+    contextLogoutAdmin();
     showNotification("안전하게 로그아웃 되었습니다.");
   };
 
@@ -468,7 +492,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
     setIsFormOpen(true);
   };
 
-  const openEditForm = (article: NewsArticle, e: React.MouseEvent) => {
+  const openEditForm = (article: DefenseNewsItem, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingArticleId(article.id);
     setFormTab(article.tab);
@@ -485,16 +509,18 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
     setIsFormOpen(true);
   };
 
-  const handleDelete = (id: string, e: React.MouseEvent) => {
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (window.confirm("선택한 기사를 게시판에서 영구 삭제하시겠습니까?")) {
-      const filtered = articles.filter(a => a.id !== id);
-      setArticles(filtered);
-      showNotification("게시물이 삭제되었습니다.");
+    if (window.confirm("선택한 기사를 영구 삭제하시겠습니까? (새로고침 후에도 삭제 상태가 유지됩니다)")) {
+      await deleteDefenseNewsItem(id);
+      const deletedIds = getLocalDeletedNewsIds();
+      deletedIds.add(id);
+      setArticles(prev => prev.filter(a => a.id !== id));
+      showNotification("게시물이 영구 삭제되었습니다.");
     }
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formTitle.trim() || !formSummary.trim() || !formCore.trim() || !formBody.trim()) {
       alert("필수 항목을 모두 작성해주세요.");
@@ -509,56 +535,47 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
           : "https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=600&q=80"
     );
 
-    if (editingArticleId) {
-      // Edit mode
-      const updated = articles.map(a => {
-        if (a.id === editingArticleId) {
-          return {
-            ...a,
-            tab: formTab,
-            category: formCategory,
-            title: formTitle,
-            summary: formSummary,
-            source: formSource,
-            date: formDate,
-            url: formUrl,
-            imageUrl: resolvedImageUrl,
-            coreSummary: formCore,
-            bodyText: formBody,
-            perspective: formPerspective
-          };
-        }
-        return a;
-      });
-      setArticles(updated);
-      showNotification("게시물이 수정되었습니다.");
-    } else {
-      // Add mode
-      const newArticle: NewsArticle = {
-        id: `news-${Date.now()}`,
-        tab: formTab,
-        category: formCategory,
-        title: formTitle,
-        summary: formSummary,
-        source: formSource,
-        date: formDate,
-        url: formUrl,
-        imageUrl: resolvedImageUrl,
-        coreSummary: formCore,
-        bodyText: formBody,
-        perspective: formPerspective
-      };
-      setArticles([newArticle, ...articles]);
-      showNotification("신규 K-방산 동향이 등록되었습니다.");
-    }
+    const updatedItem: DefenseNewsItem = {
+      id: editingArticleId || `news-custom-${Date.now()}`,
+      tab: formTab,
+      category: formCategory,
+      title: formTitle.trim(),
+      summary: formSummary.trim(),
+      source: formSource.trim(),
+      date: formDate,
+      url: formUrl.trim(),
+      imageUrl: resolvedImageUrl,
+      coreSummary: formCore.trim(),
+      bodyText: formBody.trim(),
+      perspective: formPerspective.trim(),
+      isCustom: true,
+      updatedAt: new Date().toISOString()
+    };
+
+    // 1. Save to Cloud Firestore and local custom map
+    await saveDefenseNewsItem(updatedItem);
+
+    // 2. Update local state
+    setArticles(prev => {
+      const customMap = getLocalCustomNewsMap();
+      const deletedIds = getLocalDeletedNewsIds();
+      const updatedList = editingArticleId
+        ? prev.map(a => a.id === editingArticleId ? updatedItem : a)
+        : [updatedItem, ...prev];
+      return mergeNewsSafely(updatedList, customMap, [...firestoreArticles, updatedItem], deletedIds);
+    });
+
     setIsFormOpen(false);
+    showNotification(editingArticleId ? "기사 및 대표 이미지가 수정 저장되었습니다. (새로고침 후에도 영구 보존)" : "신규 기사가 등록되었습니다. (새로고침 후에도 영구 보존)");
   };
 
   // Reset Articles to default
   const resetToDefault = () => {
-    if (window.confirm("기본 팩트 데이터로 다시 복구하시겠습니까?")) {
+    if (window.confirm("기본 팩트 데이터로 복구하시겠습니까? 사용자 맞춤 수정사항이 초기화됩니다.")) {
+      localStorage.removeItem("sw_defense_custom_news_map");
+      localStorage.removeItem("sw_defense_deleted_ids");
       setArticles(DEFAULT_DEFENSE_NEWS);
-      showNotification("기본 데이터로 리셋되었습니다.");
+      showNotification("기본 팩트 데이터로 복구되었습니다.");
     }
   };
   const filteredArticles = articles.filter(art => {
@@ -644,7 +661,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
 
             {/* Admin toggle console box & Google Sheets Live Automation (Admin Only) */}
             <div className="flex flex-col sm:flex-row gap-3 items-stretch">
-              {isAdminMode ? (
+              {effectiveIsAdmin ? (
                 <>
                   {/* Google Sheets Sync Card (Visible to Admin Only) */}
                   <div className="p-4 rounded-xl bg-gradient-to-br from-military-920 via-military-900 to-gray-950 border border-kraft-500/40 shadow-lg flex flex-col justify-between gap-3 min-w-[300px] max-w-sm text-left">
@@ -1138,7 +1155,7 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                       {/* Bottom Action Section */}
                       <div className="flex items-center justify-between gap-4 mt-5 pt-4 border-t border-gray-150 relative">
                         <div className="flex items-center gap-2">
-                          {isAdminMode && (
+                          {effectiveIsAdmin && (
                             <div className="flex gap-1.5">
                               <button
                                 onClick={(e) => openEditForm(article, e)}
@@ -1461,50 +1478,116 @@ export default function NewsView({ onTabChange }: NewsViewProps) {
                     />
                   </div>
 
-                  {/* Representative Image URL field */}
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">기사 대표 이미지 URL (선택)</label>
-                      <span className="text-[10px] text-gray-400 font-light">비워두면 각 대분류별 공장/군수 템플릿 실시간 자동 지정</span>
+                  {/* Representative Image URL & Upload field */}
+                  <div className="bg-gray-50/80 p-3 rounded-lg border border-gray-200">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <ImageIcon className="w-3.5 h-3.5 text-kraft-600" />
+                        기사 대표 이미지 설정 (클라우드 영구 저장)
+                      </label>
+                      <span className="text-[10px] text-gray-400 font-light">URL 입력 또는 PC 파일 업로드</span>
                     </div>
-                    <input
-                      type="url"
-                      value={formImageUrl}
-                      onChange={(e) => setFormImageUrl(e.target.value)}
-                      placeholder="https://images.unsplash.com/... (또는 아래의 권장 고해상도 프리셋 클릭)"
-                      className="w-full text-xs py-2 px-3 rounded-lg border border-gray-300 focus:outline-none focus:border-military-600 mb-2"
-                    />
+
+                    {/* Image Preview & Controls */}
+                    <div className="flex flex-col sm:flex-row gap-3 items-start mb-2">
+                      <div className="w-full sm:w-36 h-24 rounded-lg bg-gray-200 border border-gray-300 overflow-hidden flex-shrink-0 relative group">
+                        {formImageUrl ? (
+                          <img
+                            src={formImageUrl}
+                            alt="미리보기"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-2 text-center">
+                            <ImageIcon className="w-6 h-6 mb-1 opacity-50" />
+                            <span className="text-[9.5px]">기본 이미지 자동적용</span>
+                          </div>
+                        )}
+                        {formImageUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setFormImageUrl("")}
+                            className="absolute top-1 right-1 bg-gray-900/80 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                            title="이미지 초기화"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex-1 w-full space-y-2">
+                        <input
+                          type="url"
+                          value={formImageUrl}
+                          onChange={(e) => setFormImageUrl(e.target.value)}
+                          placeholder="https://images.unsplash.com/... (웹 이미지 URL)"
+                          className="w-full text-xs py-1.5 px-2.5 rounded-md border border-gray-300 bg-white focus:outline-none focus:border-military-600"
+                        />
+                        <div className="flex items-center gap-2">
+                          <label className="cursor-pointer inline-flex items-center gap-1.5 text-[11px] py-1 px-2.5 rounded-md bg-military-800 hover:bg-military-900 text-white font-medium transition-colors shadow-sm">
+                            <Upload className="w-3 h-3" />
+                            <span>PC 이미지 파일 선택</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    if (typeof event.target?.result === "string") {
+                                      setFormImageUrl(event.target.result);
+                                    }
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+                          </label>
+                          <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                            <ShieldCheck className="w-3.5 h-3.5" /> 새로고침 시에도 영구 보존
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                     
                     {/* Visual suggestion buttons for high quality imagery */}
-                    <div className="flex flex-wrap gap-1.5 mt-1">
-                      <button
-                        type="button"
-                        onClick={() => setFormImageUrl("https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80")}
-                        className="text-[10px] py-1 px-2 border border-gray-200 hover:border-kraft-400 rounded-md bg-gray-50 text-gray-600 hover:text-kraft-700 cursor-pointer"
-                      >
-                        🏭 정밀제조 공공라인
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormImageUrl("https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80")}
-                        className="text-[10px] py-1 px-2 border border-gray-200 hover:border-kraft-400 rounded-md bg-gray-50 text-gray-600 hover:text-kraft-700 cursor-pointer"
-                      >
-                        💂 군수 전략자산
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormImageUrl("https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=600&q=80")}
-                        className="text-[10px] py-1 px-2 border border-gray-200 hover:border-kraft-400 rounded-md bg-gray-50 text-gray-650 text-gray-600 hover:text-kraft-700 cursor-pointer"
-                      >
-                        📦 원격 화물 물류관
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFormImageUrl("https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=600&q=80")}
-                        className="text-[10px] py-1 px-2 border border-gray-200 hover:border-kraft-400 rounded-md bg-gray-50 text-gray-650 text-gray-600 hover:text-kraft-700 cursor-pointer"
-                      >
-                        🌲 친환경 재생펄프관
-                      </button>
+                    <div>
+                      <div className="text-[10.5px] text-gray-500 font-medium mb-1">권장 고화질 테마 프리셋:</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setFormImageUrl("https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=600&q=80")}
+                          className="text-[10px] py-1 px-2 border border-gray-200 hover:border-kraft-400 rounded-md bg-white text-gray-700 hover:text-kraft-700 cursor-pointer shadow-2xs"
+                        >
+                          🏭 정밀제조 공공라인
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormImageUrl("https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80")}
+                          className="text-[10px] py-1 px-2 border border-gray-200 hover:border-kraft-400 rounded-md bg-white text-gray-700 hover:text-kraft-700 cursor-pointer shadow-2xs"
+                        >
+                          💂 군수 전략자산
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormImageUrl("https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=600&q=80")}
+                          className="text-[10px] py-1 px-2 border border-gray-200 hover:border-kraft-400 rounded-md bg-white text-gray-700 hover:text-kraft-700 cursor-pointer shadow-2xs"
+                        >
+                          📦 원격 화물 물류관
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormImageUrl("https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=600&q=80")}
+                          className="text-[10px] py-1 px-2 border border-gray-200 hover:border-kraft-400 rounded-md bg-white text-gray-700 hover:text-kraft-700 cursor-pointer shadow-2xs"
+                        >
+                          🌲 친환경 재생펄프관
+                        </button>
+                      </div>
                     </div>
                   </div>
 

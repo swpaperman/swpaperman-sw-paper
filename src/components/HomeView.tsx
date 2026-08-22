@@ -39,7 +39,10 @@ import {
   getStoredLastSyncTime, 
   saveDefenseNewsToStorage,
   DEFAULT_DEFENSE_NEWS,
-  DefenseNewsItem 
+  DefenseNewsItem,
+  mergeNewsSafely,
+  getLocalCustomNewsMap,
+  getLocalDeletedNewsIds
 } from "../lib/defenseNewsStore";
 import { 
   DEFAULT_DEFENSE_NEWS_SHEET_ID, 
@@ -211,8 +214,11 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
     fetchDefenseNewsFromGoogleSheet(DEFAULT_DEFENSE_NEWS_SHEET_ID)
       .then(res => {
         if (res.success && res.articles && res.articles.length > 0) {
-          saveDefenseNewsToStorage(res.articles);
-          setNewsList(res.articles);
+          const customMap = getLocalCustomNewsMap();
+          const deletedIds = getLocalDeletedNewsIds();
+          const merged = mergeNewsSafely(res.articles, customMap, [], deletedIds);
+          saveDefenseNewsToStorage(merged);
+          setNewsList(merged);
           setLastSyncTime(new Date().toLocaleTimeString());
         }
       })
