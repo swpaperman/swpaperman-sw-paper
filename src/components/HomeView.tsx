@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.5
  */
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { 
   ShieldCheck, 
   Settings, 
@@ -13,9 +13,26 @@ import {
   ChevronRight, 
   CheckCircle2, 
   ArrowRight,
-  ExternalLink
+  ExternalLink,
+  Radio,
+  Sparkles,
+  TrendingUp,
+  Calendar,
+  RefreshCw,
+  Cpu,
+  Globe,
+  ArrowUpRight,
+  Flame,
+  Bell,
+  FileSpreadsheet
 } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { useLanguage } from "../context/LanguageContext";
+import { 
+  getStoredDefenseNews, 
+  getStoredLastSyncTime, 
+  DefenseNewsItem 
+} from "../lib/defenseNewsStore";
 
 interface HomeViewProps {
   onTabChange: (tabId: string) => void;
@@ -122,16 +139,99 @@ const defensePartners = [
 
 export default function HomeView({ onTabChange }: HomeViewProps) {
   const { language, t } = useLanguage();
+  const [newsList, setNewsList] = useState<DefenseNewsItem[]>(() => getStoredDefenseNews());
+  const [lastSyncTime, setLastSyncTime] = useState<string>(() => getStoredLastSyncTime());
+  const [currentTickerIdx, setCurrentTickerIdx] = useState(0);
+
+  // Auto-update news from localStorage if updated in another tab or sheet sync
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setNewsList(getStoredDefenseNews());
+      setLastSyncTime(getStoredLastSyncTime());
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  // Auto-rotate breaking news ticker every 4.5 seconds
+  useEffect(() => {
+    if (newsList.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentTickerIdx((prev) => (prev + 1) % newsList.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [newsList.length]);
+
+  const activeTickerArticle = newsList[currentTickerIdx] || newsList[0];
+  const featuredArticle = newsList[0] || activeTickerArticle;
+  const recentArticles = newsList.slice(1, 5);
 
   return (
     <div className="bg-white min-h-screen font-sans">
       
       {/* 1. HERO SECTION */}
-      <section className="relative bg-military-900 flex items-center overflow-hidden pt-24 pb-12 sm:pt-28 sm:pb-16 lg:pt-32 lg:pb-20 xl:pt-36 xl:pb-24">
-        {/* Background Grid Pattern */}
+      <section className="relative bg-military-900 flex flex-col justify-center overflow-hidden pt-24 pb-12 sm:pt-28 sm:pb-16 lg:pt-30 lg:pb-20 xl:pt-32 xl:pb-22">
+        {/* Background Grid Pattern & Ambient Lighting */}
         <div className="absolute inset-0 tech-grid-dark opacity-25 z-0 pointer-events-none" />
         <div className="absolute top-1/4 right-1/4 w-[35vw] h-[35vw] rounded-full bg-military-700/15 blur-[120px] pointer-events-none" />
         <div className="absolute bottom-10 left-10 w-[25vw] h-[25vw] rounded-full bg-kraft-600/10 blur-[90px] pointer-events-none" />
+
+        {/* 1.0 TOP LIVE DEFENSE INTELLIGENCE TICKER (생동감 넘치는 실시간 속보 티커 바) */}
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-8 xl:px-16 w-full relative z-20 mb-6 sm:mb-8">
+          <div className="bg-gradient-to-r from-military-950 via-military-850 to-gray-950 border border-military-700/70 rounded-2xl p-2 sm:p-2.5 shadow-2xl backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4">
+            
+            {/* Live Indicator Chip */}
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+              <span className="inline-flex items-center gap-1.5 py-1 px-3 rounded-full bg-red-950/80 border border-red-500/50 text-red-300 text-[11px] sm:text-xs font-black tracking-wider uppercase">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 absolute" />
+                LIVE K-DEFENSE
+              </span>
+              <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-mono text-gray-400 font-medium">
+                <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
+                {lastSyncTime.includes("2026") ? "2026-08-22 동기화" : "실시간 자동 동기화 가동 중"}
+              </span>
+            </div>
+
+            {/* Rotating Breaking News Title Bar */}
+            <div 
+              onClick={() => onTabChange("news")}
+              className="flex-1 overflow-hidden cursor-pointer group flex items-center gap-2 w-full min-w-0 py-0.5 sm:py-0 px-1 hover:text-kraft-300 transition-colors"
+            >
+              <span className="hidden lg:inline-block text-[10px] font-mono font-bold text-kraft-400 bg-military-800/90 border border-military-600/50 px-2 py-0.5 rounded shrink-0">
+                {activeTickerArticle.category}
+              </span>
+              <div className="flex-1 overflow-hidden relative h-5 sm:h-6 flex items-center">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTickerArticle.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-xs sm:text-sm font-bold text-white group-hover:text-kraft-300 truncate flex items-center gap-2 w-full text-left"
+                  >
+                    <span className="text-kraft-350 font-mono text-[11.5px] shrink-0 font-black">
+                      [{activeTickerArticle.date}]
+                    </span>
+                    <span className="truncate text-white font-bold tracking-tight group-hover:text-kraft-200">
+                      {activeTickerArticle.title}
+                    </span>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Direct Newsroom CTA Button */}
+            <button
+              onClick={() => onTabChange("news")}
+              className="shrink-0 self-end sm:self-auto inline-flex items-center gap-1.5 py-1 px-3 rounded-xl bg-kraft-500 hover:bg-kraft-400 text-gray-950 text-[11px] sm:text-xs font-black transition-all cursor-pointer shadow-sm hover:scale-[1.02] active:scale-98"
+            >
+              <span>방산뉴스 허브</span>
+              <ArrowRight className="w-3 h-3 text-gray-950" />
+            </button>
+          </div>
+        </div>
 
         <div className="max-w-[1600px] mx-auto px-4 sm:px-8 xl:px-16 relative z-10 w-full text-left">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-[80px] xl:gap-[110px]">
@@ -139,12 +239,23 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
             {/* Left Column: Core Copy */}
             <div className="w-full lg:max-w-[720px] flex-1 flex flex-col justify-center">
               
-              {/* Reliable Badge */}
-              <div className="inline-flex items-center gap-2 py-1 px-3.5 rounded-full bg-military-800/90 border border-military-600/40 backdrop-blur-sm w-fit mb-4">
-                <span className="w-1.5 h-1.5 rounded-full bg-kraft-500 animate-pulse" />
-                <span className="text-[12.5px] sm:text-[13.5px] font-sans font-bold text-kraft-300 uppercase tracking-wide leading-none">
-                  {t.home.heroBadge}
-                </span>
+              {/* Reliable Badge + Live Intel Alert Pill */}
+              <div className="flex flex-wrap items-center gap-2.5 mb-4">
+                <div className="inline-flex items-center gap-2 py-1 px-3.5 rounded-full bg-military-800/90 border border-military-600/40 backdrop-blur-sm w-fit">
+                  <span className="w-1.5 h-1.5 rounded-full bg-kraft-500 animate-pulse" />
+                  <span className="text-[12.5px] sm:text-[13.5px] font-sans font-bold text-kraft-300 uppercase tracking-wide leading-none">
+                    {t.home.heroBadge}
+                  </span>
+                </div>
+
+                <div 
+                  onClick={() => onTabChange("news")}
+                  className="inline-flex items-center gap-1.5 py-1 px-3 rounded-full bg-military-850/90 hover:bg-military-800 border border-kraft-500/40 text-kraft-300 text-[11.5px] font-semibold cursor-pointer transition-all group"
+                >
+                  <Flame className="w-3.5 h-3.5 text-amber-400 animate-bounce" />
+                  <span className="font-bold">K-방산 실시간 모니터링 활성</span>
+                  <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                </div>
               </div>
 
               {/* Majestic Titles */}
@@ -165,8 +276,32 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                 </p>
               </div>
 
+              {/* Real-Time Live Intelligence Card inside Hero */}
+              <div 
+                onClick={() => onTabChange("news")}
+                className="mt-6 p-3.5 rounded-xl bg-gradient-to-r from-military-850/95 via-military-800/80 to-military-900/90 border border-military-600/60 hover:border-kraft-450 transition-all duration-300 shadow-xl cursor-pointer group relative overflow-hidden"
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10.5px] font-mono font-bold text-kraft-350 flex items-center gap-1.5 uppercase">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                    실시간 방산 브리핑 • 2026.08.22 업데이트
+                  </span>
+                  <span className="text-[10px] text-gray-400 group-hover:text-kraft-300 flex items-center gap-0.5 font-mono">
+                    뉴스 전문 보기 <ArrowUpRight className="w-3 h-3" />
+                  </span>
+                </div>
+                <p className="text-xs sm:text-[13px] font-bold text-white group-hover:text-kraft-200 transition-colors leading-snug line-clamp-2">
+                  {featuredArticle.title}
+                </p>
+                <div className="mt-2 flex items-center gap-3 text-[10px] text-gray-400 font-mono">
+                  <span className="text-kraft-400 font-semibold">{featuredArticle.source}</span>
+                  <span>•</span>
+                  <span className="text-emerald-400 font-medium">수원지관 방습 규격 연계 공급</span>
+                </div>
+              </div>
+
               {/* Hero CTA Actions */}
-              <div className="flex flex-wrap gap-4 mt-8">
+              <div className="flex flex-wrap gap-4 mt-7">
                 <button
                   onClick={() => onTabChange("contact")}
                   className="py-3.5 px-6 rounded-xl bg-kraft-500 text-gray-950 text-[15px] sm:text-[16px] font-black hover:bg-kraft-600 transition-all flex items-center gap-1.5 cursor-pointer shadow-lg active:scale-95 border-0"
@@ -180,6 +315,13 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                 >
                   {t.home.viewAmmoBtn}
                   <ChevronRight className="w-4.5 h-4.5 text-white" />
+                </button>
+                <button
+                  onClick={() => onTabChange("news")}
+                  className="py-3.5 px-5 rounded-xl bg-military-850/80 hover:bg-military-800 text-kraft-300 text-[14px] sm:text-[15px] font-bold border border-kraft-500/40 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <TrendingUp className="w-4 h-4 text-kraft-400" />
+                  <span>K-방산 실시간 뉴스</span>
                 </button>
               </div>
             </div>
@@ -348,6 +490,191 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                 </a>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* 1.5 K-방산 실시간 군수 뉴스 & 시장 동향 (LIVE DEFENSE INTELLIGENCE BENTO) */}
+      <section className="py-16 sm:py-20 bg-gradient-to-b from-gray-950 via-military-950 to-gray-950 text-white relative overflow-hidden border-b border-gray-900 font-sans">
+        {/* Ambient glow effects */}
+        <div className="absolute top-1/3 left-10 w-96 h-96 rounded-full bg-kraft-500/10 blur-[130px] pointer-events-none" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-military-600/15 blur-[130px] pointer-events-none" />
+
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-8 xl:px-16 relative z-10 text-left">
+          
+          {/* Header Bar */}
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
+            <div className="space-y-3 max-w-4xl">
+              <div className="inline-flex items-center gap-2 py-1 px-3 rounded-full bg-military-850 border border-red-500/40">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                <span className="text-[11px] sm:text-xs font-mono font-bold text-red-300 uppercase tracking-wider">
+                  REAL-TIME DEFENSE INTELLIGENCE
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3.5xl font-black text-white tracking-tight leading-tight flex flex-wrap items-center gap-3">
+                <span>K-방산 실시간 군수 뉴스 & 시장 동향</span>
+                <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-500/40 px-2.5 py-1 rounded-full flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  실시간 연동 활성
+                </span>
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-400 leading-relaxed font-light">
+                {language === "ko"
+                  ? "매일 아침 08:00 구글 시트 및 AI 수집망과 자동 동기화되는 K-방산 최신 속보와, 탄약 보존 지환통 60년 전문 제조사 수원지관산업의 실무 인사이트를 실시간으로 전달합니다."
+                  : language === "tr"
+                    ? "Kore savunma sanayii son dakika haberleri, NATO mühimmat paketleme standartları ve Suwon Paper'ın 60 yıllık askeri üretim analizleri anlık olarak güncellenir."
+                    : "Real-time updates on K-Defense supply chains, NATO defense packaging standards, and technical insights from 60-year defense packaging leader Suwon Paper Tube."}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <button
+                onClick={() => onTabChange("news")}
+                className="py-3 px-5 rounded-xl bg-kraft-500 hover:bg-kraft-400 text-gray-950 text-xs sm:text-sm font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-lg active:scale-95 border-0 group"
+              >
+                <span>방산뉴스 허브 전체보기</span>
+                <ArrowRight className="w-4 h-4 text-gray-950 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          </div>
+
+          {/* Main Bento Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            
+            {/* Left Main Featured Story Card (7 Cols) */}
+            <div 
+              onClick={() => onTabChange("news")}
+              className="lg:col-span-7 bg-gradient-to-br from-military-900/90 via-military-850/80 to-gray-900/95 border border-military-700/80 hover:border-kraft-400/80 rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-2xl transition-all duration-300 group cursor-pointer hover:-translate-y-1 relative overflow-hidden"
+            >
+              <div className="space-y-5">
+                
+                {/* Meta Top Tag */}
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 py-1 px-3 rounded-md bg-red-600/90 text-white text-[11px] font-black tracking-wide">
+                      <Flame className="w-3.5 h-3.5" />
+                      최신 주요 속보
+                    </span>
+                    <span className="py-1 px-3 rounded-md bg-military-800 text-kraft-300 text-[11px] font-mono font-bold border border-military-600/50">
+                      {featuredArticle.category}
+                    </span>
+                  </div>
+                  <span className="text-xs font-mono text-gray-400 flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-kraft-400" />
+                    {featuredArticle.date}
+                  </span>
+                </div>
+
+                {/* Title */}
+                <h3 className="text-lg sm:text-xl md:text-2xl font-black text-white group-hover:text-kraft-300 transition-colors leading-snug">
+                  {featuredArticle.title}
+                </h3>
+
+                {/* Image & Summary Layout */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
+                  {featuredArticle.imageUrl && (
+                    <div className="sm:col-span-5 h-44 sm:h-48 rounded-2xl overflow-hidden bg-military-950 border border-military-700/60 shrink-0">
+                      <img 
+                        src={featuredArticle.imageUrl} 
+                        alt={featuredArticle.title}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                  )}
+                  <div className={`${featuredArticle.imageUrl ? "sm:col-span-5" : "sm:col-span-12"} space-y-3`}>
+                    <p className="text-xs sm:text-sm text-gray-300 leading-relaxed line-clamp-4 font-light">
+                      {featuredArticle.summary}
+                    </p>
+                    <div className="flex items-center gap-2 text-[11px] font-mono text-kraft-400">
+                      <span>출처: {featuredArticle.source}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Highlighted Perspective Box */}
+                <div className="bg-gradient-to-r from-kraft-950/80 via-military-900/90 to-military-950/90 border border-kraft-500/30 rounded-2xl p-4 space-y-1.5">
+                  <div className="flex items-center gap-1.5 text-kraft-350 text-xs font-bold font-mono uppercase">
+                    <Sparkles className="w-3.5 h-3.5 text-kraft-400" />
+                    <span>수원지관산업 제조 관점 (Suwon Manufacturing Insight)</span>
+                  </div>
+                  <p className="text-xs text-gray-300 leading-relaxed font-light">
+                    {featuredArticle.perspective}
+                  </p>
+                </div>
+              </div>
+
+              {/* Bottom Card Action */}
+              <div className="mt-6 pt-4 border-t border-military-800/80 flex items-center justify-between text-xs text-kraft-400 font-bold group-hover:text-kraft-300">
+                <span className="flex items-center gap-1">
+                  뉴스 본문 & 군수 포장 사양 분석 전문 읽기
+                </span>
+                <div className="flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  <span>자세히 보기</span>
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+
+            {/* Right Real-time Feed List (5 Cols) */}
+            <div className="lg:col-span-5 flex flex-col justify-between space-y-4">
+              <div className="space-y-3.5 flex-1">
+                {recentArticles.map((art, idx) => (
+                  <div
+                    key={art.id || idx}
+                    onClick={() => onTabChange("news")}
+                    className="p-4 rounded-2xl bg-military-900/70 hover:bg-military-850/90 border border-military-800/80 hover:border-kraft-500/50 transition-all duration-200 cursor-pointer group shadow-sm flex flex-col justify-between"
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span className="text-[10px] font-mono font-bold text-kraft-350 bg-military-800 px-2 py-0.5 rounded border border-military-700/50">
+                        {art.category}
+                      </span>
+                      <span className="text-[10px] font-mono text-gray-400">
+                        {art.date}
+                      </span>
+                    </div>
+                    <h4 className="text-xs sm:text-[13.5px] font-bold text-white group-hover:text-kraft-200 transition-colors leading-snug line-clamp-2">
+                      {art.title}
+                    </h4>
+                    <p className="text-[11px] text-gray-400 mt-1 line-clamp-2 font-light leading-relaxed">
+                      {art.summary}
+                    </p>
+                    <div className="mt-2.5 pt-2 border-t border-military-800/50 flex items-center justify-between text-[10px] text-gray-400 group-hover:text-kraft-300 font-mono">
+                      <span>{art.source}</span>
+                      <span className="flex items-center gap-0.5 font-bold">
+                        읽기 <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Live Sync Status Info Box */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-military-950 via-gray-900 to-black border border-military-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-inner">
+                <div className="flex items-center gap-2.5 text-left w-full sm:w-auto">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                    <RefreshCw className="w-4 h-4 text-emerald-400 animate-spin" style={{ animationDuration: '6s' }} />
+                  </div>
+                  <div>
+                    <span className="block text-[11px] font-bold text-white">
+                      수원지관 뉴스 실시간 연동
+                    </span>
+                    <span className="block text-[10px] font-mono text-gray-400">
+                      최근 동기화: {lastSyncTime.includes("2026") ? "2026-08-22 (정상)" : lastSyncTime}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => onTabChange("news")}
+                  className="w-full sm:w-auto py-2 px-3.5 rounded-xl bg-military-800 hover:bg-military-750 text-kraft-300 text-xs font-bold border border-military-600 transition-colors flex items-center justify-center gap-1 cursor-pointer shrink-0 hover:border-kraft-500/60"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>수원지관 동기화 센터</span>
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
