@@ -482,6 +482,29 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
     }
   };
 
+  // Admin CRUD Modals
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  
+  // Independent Modal Form States (Add vs Edit)
+  const initialFormState = {
+    id: "",
+    name: "",
+    innerDia: "",
+    thickness: "",
+    length: "",
+    quantity: "",
+    condition: "최우수",
+    approxPrice: "상담 협의",
+    imageUrl: IMAGE_PRESETS[0].url,
+    imageUrls: [] as string[],
+    desc: ""
+  };
+
+  const [addFormData, setAddFormData] = useState(initialFormState);
+  const [editFormData, setEditFormData] = useState(initialFormState);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
   // Google Drive sharing URL parsing parser hook
   useEffect(() => {
     if (!gdriveInput) {
@@ -491,10 +514,17 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
     }
 
     const trimmed = gdriveInput.trim();
+    const applyUrl = (url: string) => {
+      if (showAddModal) {
+        setAddFormData(prev => ({ ...prev, imageUrl: url }));
+      } else if (showEditModal) {
+        setEditFormData(prev => ({ ...prev, imageUrl: url }));
+      }
+    };
     
     if (/^[a-zA-Z0-9_-]{25,}$/.test(trimmed)) {
       setGdriveFileId(trimmed);
-      setFormImageUrl(`https://lh3.googleusercontent.com/d/${trimmed}`);
+      applyUrl(`https://lh3.googleusercontent.com/d/${trimmed}`);
       setGdriveError("");
       return;
     }
@@ -505,7 +535,7 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
         const idMatched = parts[1].split(/[^a-zA-Z0-9_-]/)[0];
         if (idMatched && idMatched.length >= 25) {
           setGdriveFileId(idMatched);
-          setFormImageUrl(`https://lh3.googleusercontent.com/d/${idMatched}`);
+          applyUrl(`https://lh3.googleusercontent.com/d/${idMatched}`);
           setGdriveError("");
           return;
         }
@@ -516,7 +546,7 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
     const matchD = trimmed.match(dPattern);
     if (matchD && matchD[1]) {
       setGdriveFileId(matchD[1]);
-      setFormImageUrl(`https://lh3.googleusercontent.com/d/${matchD[1]}`);
+      applyUrl(`https://lh3.googleusercontent.com/d/${matchD[1]}`);
       setGdriveError("");
       return;
     }
@@ -525,38 +555,21 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
     const matchId = trimmed.match(idPattern);
     if (matchId && matchId[1]) {
       setGdriveFileId(matchId[1]);
-      setFormImageUrl(`https://lh3.googleusercontent.com/d/${matchId[1]}`);
+      applyUrl(`https://lh3.googleusercontent.com/d/${matchId[1]}`);
       setGdriveError("");
       return;
     }
 
     setGdriveFileId("");
     setGdriveError(language === "ko" ? "올바른 구글 드라이브 공유 주소가 아닙니다." : "Invalid Google Drive sharing URL.");
-  }, [gdriveInput]);
-
-  // Admin CRUD Modals
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  
-  // Modal Form States
-  const [formId, setFormId] = useState("");
-  const [formName, setFormName] = useState("");
-  const [formInnerDia, setFormInnerDia] = useState("");
-  const [formThickness, setFormThickness] = useState("");
-  const [formLength, setFormLength] = useState("");
-  const [formQuantity, setFormQuantity] = useState("");
-  const [formCondition, setFormCondition] = useState("최우수");
-  const [formApproxPrice, setFormApproxPrice] = useState("상담 협의");
-  const [formImageUrl, setFormImageUrl] = useState(IMAGE_PRESETS[0].url);
-  const [formImageUrls, setFormImageUrls] = useState<string[]>([]);
-  const [formDesc, setFormDesc] = useState("");
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  }, [gdriveInput, showAddModal, showEditModal]);
 
   // States for live Google Drive uploads for stocks
   const [gdriveToken, setGdriveToken] = useState<string | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [activeDetailPhotoIndex, setActiveDetailPhotoIndex] = useState(0);
   const [isDragActive, setIsDragActive] = useState(false);
+  const [showGdriveAdvanced, setShowGdriveAdvanced] = useState(false);
 
   const handleSelectStock = (s: StockItem) => {
     setSelectedStock(s);
@@ -629,8 +642,8 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement("canvas");
-          const MAX_WIDTH = 1000;
-          const MAX_HEIGHT = 800;
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 900;
           let width = img.width;
           let height = img.height;
 
@@ -656,7 +669,7 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
           }
 
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.72);
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.78);
           resolve(compressedDataUrl);
         };
         img.onerror = () => {
@@ -669,136 +682,162 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
     });
   };
 
-  const processImageFile = async (file: File) => {
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      alert(language === "ko" ? "이미지 파일만 등록할 수 있습니다." : "Only image formats are supported.");
+  const processImageFiles = async (files: FileList | File[], targetModal: 'add' | 'edit') => {
+    if (!files || files.length === 0) return;
+    const fileArray = Array.from(files).filter(f => f.type.startsWith("image/"));
+    if (fileArray.length === 0) {
+      alert(language === "ko" ? "이미지 파일(.jpg, .png, .webp 등)만 등록 가능합니다." : "Only image formats (.jpg, .png, .webp) are supported.");
       return;
     }
 
-    const isCustomMain = formImageUrl && !IMAGE_PRESETS.some(p => p.url === formImageUrl);
-    const currentTotal = (isCustomMain ? 1 : 0) + formImageUrls.length;
-    if (currentTotal >= 5) {
+    const currentForm = targetModal === 'add' ? addFormData : editFormData;
+    const setForm = targetModal === 'add' ? setAddFormData : setEditFormData;
+    
+    const isCustomMain = currentForm.imageUrl && !IMAGE_PRESETS.some(p => p.url === currentForm.imageUrl);
+    const currentCount = (isCustomMain ? 1 : 0) + currentForm.imageUrls.length;
+    const availableSlots = 5 - currentCount;
+
+    if (availableSlots <= 0) {
       alert(language === "ko" 
-        ? "사진은 대표 이미지를 포함하여 최대 5장까지만 업로드 가능합니다." 
-        : "You can load up to 5 photos maximum.");
+        ? "사진은 대표 이미지를 포함하여 최대 5장까지만 등록 가능합니다. 기존 사진을 삭제 후 추가해주세요." 
+        : "Maximum 5 photos allowed. Remove an existing photo first.");
       return;
     }
 
+    const filesToProcess = fileArray.slice(0, availableSlots);
     setIsUploadingImage(true);
+
     try {
-      const compressedBase64 = await compressImage(file);
+      const processedUrls: string[] = [];
       const token = gdriveToken || getAccessToken();
-      let finalUrl = compressedBase64;
-      let driveSuccess = false;
 
-      if (token) {
-        try {
-          const uploaded = await uploadStockImageToDrive(token, file.name, file.type, compressedBase64);
-          if (uploaded && uploaded.directLink) {
-            finalUrl = uploaded.directLink;
-            driveSuccess = true;
+      for (const file of filesToProcess) {
+        const compressedBase64 = await compressImage(file);
+        let finalUrl = compressedBase64;
+
+        if (token) {
+          try {
+            const uploaded = await uploadStockImageToDrive(token, file.name, file.type, compressedBase64);
+            if (uploaded && uploaded.directLink) {
+              finalUrl = uploaded.directLink;
+            }
+          } catch (gdriveErr) {
+            console.warn("Drive upload fallback to compressed base64:", gdriveErr);
           }
-        } catch (gdriveErr) {
-          console.warn("Drive failure, fallback to b64:", gdriveErr);
         }
+        processedUrls.push(finalUrl);
       }
 
-      const isDefaultUrl = IMAGE_PRESETS.some(p => p.url === formImageUrl) || !formImageUrl;
-      
-      const setAsMain = isDefaultUrl || window.confirm(
-        language === "ko" 
-          ? "업로드가 완수되었습니다. 본 자재 사진을 '대표 사진(Main Image)'으로 지정하시겠습니까?\n[취소] 선택 시 추가 이미지 목록에 배치됩니다."
-          : "Photo loaded! Set this as your Primary representation image? (Cancel places it in supplementary list)"
-      );
+      if (processedUrls.length > 0) {
+        setForm(prev => {
+          let newMain = prev.imageUrl;
+          let newExtra = [...prev.imageUrls];
 
-      if (setAsMain) {
-        setFormImageUrl(finalUrl);
-      } else {
-        setFormImageUrls(prev => [...prev, finalUrl]);
-      }
+          // If current main is default preset or empty, first uploaded image becomes main
+          const isCurrentMainDefault = !prev.imageUrl || IMAGE_PRESETS.some(p => p.url === prev.imageUrl);
+          if (isCurrentMainDefault) {
+            newMain = processedUrls[0];
+            newExtra = [...newExtra, ...processedUrls.slice(1)];
+          } else {
+            newExtra = [...newExtra, ...processedUrls];
+          }
 
-      if (driveSuccess) {
-        alert(language === "ko" ? "대표 보관서 수권 저장이 전송 완료되었습니다." : "Google Drive synced successfully.");
-      } else {
-        alert(language === "ko" 
-          ? "로컬 대통에 최적 압축 보존 완료되었습니다." 
-          : "Local optimized compression completed successfully.");
+          return {
+            ...prev,
+            imageUrl: newMain,
+            imageUrls: newExtra.slice(0, 4) // max 4 extra images (total 5)
+          };
+        });
       }
     } catch (err) {
-      console.error("Image processing failure:", err);
+      console.error("Error processing images:", err);
     } finally {
       setIsUploadingImage(false);
     }
   };
 
-  const handleFileChangeDirect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      processImageFile(e.target.files[0]);
-    }
-  };
+  // Clipboard image paste handler
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (!showAddModal && !showEditModal) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragActive(true);
-  };
+      const imageFiles: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf("image") !== -1) {
+          const file = items[i].getAsFile();
+          if (file) imageFiles.push(file);
+        }
+      }
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragActive(false);
-  };
+      if (imageFiles.length > 0) {
+        e.preventDefault();
+        processImageFiles(imageFiles, showAddModal ? 'add' : 'edit');
+      }
+    };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processImageFile(e.dataTransfer.files[0]);
-    }
-  };
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [showAddModal, showEditModal, addFormData, editFormData, gdriveToken]);
 
   const handleGdriveLogin = async () => {
     try {
-      const token = await googleSignIn();
-      if (token) {
-        setGdriveToken(token);
-        alert(language === "ko" ? "구글 드라이브 통합 인증에 성공했습니다!" : "Authorized Google Drive successfully!");
+      const result = await googleSignIn();
+      if (result) {
+        setGdriveToken(result.accessToken || getAccessToken() || "active");
+        alert(language === "ko" 
+          ? "구글 드라이브 통합 인증이 완료되었습니다. 등록되는 사진이 구글 드라이브 클라우드에도 자동 연동됩니다." 
+          : "Authorized Google Drive successfully!");
       }
-    } catch (err) {
-      console.error("Drive login err:", err);
-      alert("Auth failed: " + String(err));
+    } catch (err: any) {
+      console.warn("Drive login message:", err);
+      const isDomainError = err?.code === "auth/unauthorized-domain" || String(err).includes("unauthorized-domain");
+      if (isDomainError) {
+        alert(language === "ko" 
+          ? "안내: 구글 클라우드 드라이브 연동은 선택 사항입니다.\n\n로그인하지 않으셔도 아래 드래그 앤 드롭 또는 파일 선택을 통해 모든 사진과 제품 정보가 즉시 100% 정상 등록·저장됩니다!" 
+          : "Note: Google Drive sync is optional. Image upload works directly without login.");
+      } else {
+        alert(language === "ko" 
+          ? "구글 드라이브 연동 안내: 구글 로그인이 취소되었거나 선택사항입니다. 로그인 없이도 고화질 사진 등록이 100% 정상 작동합니다." 
+          : "Google Drive login was not completed. Direct local photo upload works normally.");
+      }
     }
   };
 
   const openAddModal = () => {
     const uniqueId = getNextStockId(stocks);
-    setFormId(uniqueId);
-    setFormName("");
-    setFormInnerDia("");
-    setFormThickness("");
-    setFormLength("");
-    setFormQuantity("");
-    setFormCondition("최우수");
-    setFormApproxPrice("상담 협의");
-    setFormImageUrl(IMAGE_PRESETS[0].url);
-    setFormImageUrls([]);
-    setFormDesc("");
+    setAddFormData({
+      id: uniqueId,
+      name: "",
+      innerDia: "",
+      thickness: "",
+      length: "",
+      quantity: "",
+      condition: "최우수",
+      approxPrice: "상담 협의",
+      imageUrl: IMAGE_PRESETS[0].url,
+      imageUrls: [],
+      desc: ""
+    });
     setGdriveInput("");
     setShowAddModal(true);
   };
 
   const openEditModal = (s: StockItem, gIdx: number) => {
-    setFormId(s.id);
-    setFormName(s.name);
-    setFormInnerDia(s.innerDia);
-    setFormThickness(s.thickness);
-    setFormLength(s.length);
-    setFormQuantity(s.quantity);
-    setFormCondition(s.condition);
-    setFormApproxPrice(s.approxPrice);
-    setFormImageUrl(s.imageUrl);
-    setFormImageUrls(s.imageUrls || []);
-    setFormDesc(s.desc || "");
+    setEditFormData({
+      id: s.id,
+      name: s.name,
+      innerDia: s.innerDia,
+      thickness: s.thickness,
+      length: s.length,
+      quantity: s.quantity,
+      condition: s.condition,
+      approxPrice: s.approxPrice,
+      imageUrl: s.imageUrl,
+      imageUrls: s.imageUrls || [],
+      desc: s.desc || ""
+    });
     setEditingIndex(gIdx);
     setShowEditModal(true);
   };
@@ -806,9 +845,9 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
   const handleCreateStock = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Verify ID is completely unique and does not collide with any existing product
-    let finalId = formId ? formId.trim() : "";
-    if (!finalId || stocks.some(s => s.id === finalId)) {
+    // Verify ID is completely unique and does not collide with ANY existing product
+    let finalId = addFormData.id ? addFormData.id.trim() : "";
+    if (!finalId || stocks.some(s => s.id === finalId) || DEFAULT_STOCKS.some(d => d.id === finalId)) {
       finalId = getNextStockId(stocks);
     }
 
@@ -816,26 +855,26 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
 
     const newStock: StockItem = {
       id: finalId,
-      name: formName || "",
-      innerDia: formInnerDia || "",
-      thickness: formThickness || "",
-      length: formLength || "",
-      quantity: formQuantity || "",
-      condition: formCondition || "최우수",
-      approxPrice: formApproxPrice || "상담 협의",
-      imageUrl: formImageUrl || IMAGE_PRESETS[0].url,
-      imageUrls: formImageUrls || [],
-      desc: formDesc || `${formName} 제품에 대한 상세한 현물 대응 긴급 수권 지관 정보입니다.`,
+      name: addFormData.name.trim() || `신규 규격 지관 (${finalId})`,
+      innerDia: addFormData.innerDia.trim() || "상담 확인",
+      thickness: addFormData.thickness.trim() || "상담 확인",
+      length: addFormData.length.trim() || "상담 확인",
+      quantity: addFormData.quantity.trim() || "1",
+      condition: addFormData.condition || "최우수",
+      approxPrice: addFormData.approxPrice || "상담 협의",
+      imageUrl: addFormData.imageUrl || IMAGE_PRESETS[0].url,
+      imageUrls: addFormData.imageUrls || [],
+      desc: addFormData.desc.trim() || `${addFormData.name || finalId} 제품에 대한 상세한 현물 대응 긴급 수권 지관 정보입니다.`,
       isCustom: true
     };
 
     // 1. Immediately save to local backup
     saveCustomStockItem(newStock);
 
-    // 2. Immediately update state so it appears in the list instantly
+    // 2. Immediately update state: append the new product to the list (NEVER replace existing products)
     setStocks(prev => {
       const filtered = prev.filter(item => item.id !== finalId);
-      const nextList = [newStock, ...filtered].sort((a, b) => a.id.localeCompare(b.id));
+      const nextList = [...filtered, newStock].sort((a, b) => a.id.localeCompare(b.id));
       return nextList;
     });
 
@@ -844,10 +883,14 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
     // 3. Persist to Firestore
     try {
       await setDoc(doc(db, "stocks", newStock.id), newStock);
-      alert(language === "ko" ? `신규 제품 [${newStock.id}]이(가) 정상 등록되었습니다.` : `Product [${newStock.id}] successfully added.`);
+      alert(language === "ko" 
+        ? `신규 제품 [${newStock.name}] (코드: ${newStock.id})이(가) 제품 목록에 정상적으로 추가 등록되었습니다.` 
+        : `Product [${newStock.id}] successfully added to catalog.`);
     } catch (err) {
       console.error("Error creating stock in Firestore:", err);
-      alert(language === "ko" ? `신규 제품 [${newStock.id}]이(가) 로컬 저장소에 안전하게 등록되었습니다.` : `Product [${newStock.id}] registered locally.`);
+      alert(language === "ko" 
+        ? `신규 제품 [${newStock.name}] (코드: ${newStock.id})이(가) 로컬 저장소에 안전하게 등록되었습니다.` 
+        : `Product [${newStock.id}] registered locally.`);
     }
   };
 
@@ -885,30 +928,31 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
 
   const handleUpdateStock = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formId) return;
+    if (!editFormData.id) return;
 
     const editedStock: StockItem = {
-      id: formId,
-      name: formName || "",
-      innerDia: formInnerDia || "",
-      thickness: formThickness || "",
-      length: formLength || "",
-      quantity: formQuantity || "",
-      condition: formCondition || "최우수",
-      approxPrice: formApproxPrice || "상담 협의",
-      imageUrl: formImageUrl || IMAGE_PRESETS[0].url,
-      imageUrls: formImageUrls || [],
-      desc: formDesc || "",
+      id: editFormData.id,
+      name: editFormData.name || "",
+      innerDia: editFormData.innerDia || "",
+      thickness: editFormData.thickness || "",
+      length: editFormData.length || "",
+      quantity: editFormData.quantity || "",
+      condition: editFormData.condition || "최우수",
+      approxPrice: editFormData.approxPrice || "상담 협의",
+      imageUrl: editFormData.imageUrl || IMAGE_PRESETS[0].url,
+      imageUrls: editFormData.imageUrls || [],
+      desc: editFormData.desc || "",
       isCustom: true
     };
 
     saveCustomStockItem(editedStock);
-    setStocks(prev => prev.map(item => item.id === formId ? editedStock : item));
+    setStocks(prev => prev.map(item => item.id === editFormData.id ? editedStock : item));
     setShowEditModal(false);
     setEditingIndex(null);
 
     try {
-      await setDoc(doc(db, "stocks", formId), editedStock);
+      await setDoc(doc(db, "stocks", editFormData.id), editedStock);
+      alert(language === "ko" ? `제품 [${editedStock.name || editFormData.id}]의 정보가 성공적으로 수정되었습니다.` : `Product [${editFormData.id}] updated.`);
     } catch (err) {
       console.error("Error updating stock in Firestore:", err);
     }
@@ -956,140 +1000,133 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
     );
   });
 
-  const renderImageManager = () => {
-    const isCustomMain = formImageUrl && !IMAGE_PRESETS.some(p => p.url === formImageUrl);
-    const currentTotal = (isCustomMain ? 1 : 0) + formImageUrls.length;
+  const renderImageManagerForModal = (targetModal: 'add' | 'edit') => {
+    const currentForm = targetModal === 'add' ? addFormData : editFormData;
+    const setForm = targetModal === 'add' ? setAddFormData : setEditFormData;
+    const isCustomMain = currentForm.imageUrl && !IMAGE_PRESETS.some(p => p.url === currentForm.imageUrl);
+    const currentTotal = (isCustomMain ? 1 : 0) + currentForm.imageUrls.length;
+
     return (
       <div 
-        className={`space-y-4 border p-4.5 rounded-2xl transition-all duration-200 text-left ${
+        className={`space-y-3.5 border p-4 rounded-2xl transition-all duration-200 text-left ${
           isDragActive 
-            ? "border-indigo-500 bg-indigo-50/60 ring-4 ring-indigo-200/50 scale-[1.01]" 
-            : "border-gray-200 bg-gray-50/50"
+            ? "border-military-600 bg-military-50/70 ring-4 ring-military-200/50 scale-[1.01]" 
+            : "border-gray-200 bg-gray-50/70"
         }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragActive(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          setIsDragActive(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragActive(false);
+          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            processImageFiles(e.dataTransfer.files, targetModal);
+          }
+        }}
       >
-        <div className="flex justify-between items-center">
-          <label className="block text-[10px] text-gray-500 font-bold uppercase tracking-wider">
-            📸 {language === "ko" ? "자재 사진 드래그 업로드 관리" : "DND Image Upload Manager"}
+        <div className="flex flex-wrap justify-between items-center gap-2">
+          <label className="block text-[11px] text-gray-800 font-extrabold uppercase tracking-wider">
+            📸 {language === "ko" ? "자재 사진 드래그 업로드 및 관리" : "Product Photo Manager"}
           </label>
+          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            {language === "ko" ? "실시간 업로드 활성 (로그인 불필요)" : "Direct Upload Active"}
+          </span>
         </div>
 
-        {/* 1. Google Drive Connector Mini Status */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 bg-white border border-gray-150 rounded-xl shadow-3xs text-xs">
-          <div className="flex items-center gap-2 text-xs">
-            <div className={`p-1.5 rounded-lg text-white ${gdriveToken ? "bg-emerald-600 animate-pulse" : "bg-slate-400"}`}>
-              {isUploadingImage ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Cloud className="w-3.5 h-3.5" />
-              )}
-            </div>
-            <div className="text-left leading-tight text-xs">
-              <span className="block text-[10px] font-bold text-gray-900">
-                {gdriveToken ? (language === "ko" ? "구글 드라이브 통합인증 완료" : "Authorized GDrive Integration Active") : (language === "ko" ? "로컬 임시 단독 가동" : "Local-first optimized backup")}
-              </span>
-              <span className="text-[9px] text-gray-400 font-light block leading-none mt-0.5">
-                {gdriveToken ? (language === "ko" ? "구글 정식 폴더 업로드 활성화" : "Automated cloud upload active") : (language === "ko" ? "로컬 브라우저 세션 영구 보관" : "Cached optimized base64 format")}
-              </span>
-            </div>
-          </div>
-          {!gdriveToken ? (
-            <button
-              type="button"
-              onClick={handleGdriveLogin}
-              className="py-1.5 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold cursor-pointer transition-all shrink-0 active:scale-95 border-0"
-            >
-              {language === "ko" ? "구글 클라우드 로그인" : "Link Google Drive"}
-            </button>
-          ) : (
-            <div className="flex items-center gap-2 shrink-0 text-xs">
-              <span className="text-[10px] text-emerald-700 font-bold">● Active</span>
-              <button
-                type="button"
-                onClick={() => setGdriveToken(null)}
-                className="py-1 px-2 text-[9px] bg-gray-100 hover:bg-gray-200 text-gray-600 rounded transition-all cursor-pointer border-0"
-              >
-                {language === "ko" ? "해제" : "Unlink"}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* 2. Direct File Upload Zone */}
+        {/* 1. Direct File Upload Zone */}
         {currentTotal < 5 ? (
           <div 
-            className={`border-2 border-dashed p-5 rounded-xl text-center bg-white relative transition-all duration-300 ${
+            className={`border-2 border-dashed p-4 rounded-xl text-center bg-white relative transition-all duration-300 ${
               isDragActive 
-                ? "border-indigo-500 bg-indigo-50/40 font-bold" 
-                : "border-gray-200 hover:border-indigo-400 hover:bg-gray-50/50"
+                ? "border-military-600 bg-military-50/40 font-bold" 
+                : "border-gray-200 hover:border-military-500 hover:bg-gray-50/50"
             }`}
           >
             <input
               type="file"
+              multiple
               accept="image/*"
               disabled={isUploadingImage}
-              onChange={handleFileChangeDirect}
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  processImageFiles(e.target.files, targetModal);
+                  e.target.value = ""; // reset
+                }
+              }}
               className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
             />
-            <div className="flex flex-col items-center justify-center space-y-1.5">
-              <Upload className={`w-8 h-8 text-indigo-500 ${isUploadingImage ? "animate-bounce" : ""}`} />
-              <p className="text-[11px] text-gray-750 font-bold">
+            <div className="flex flex-col items-center justify-center space-y-1">
+              <Upload className={`w-7 h-7 text-military-700 ${isUploadingImage ? "animate-bounce" : ""}`} />
+              <p className="text-[11px] text-gray-800 font-bold">
                 {isUploadingImage 
-                  ? (language === "ko" ? "고품질 최적 수치 보완 압축 중..." : "Downscaling assets scales in progress...") 
-                  : (language === "ko" ? "현물 이미지를 여기에 놓거나 클릭" : "Drop physical asset here or click to choose")}
+                  ? (language === "ko" ? "고화질 최적화 자동 압축 중..." : "Optimizing image in progress...") 
+                  : (language === "ko" ? "사진을 여기에 끌어다 놓거나 클릭하여 선택 (여러 장 동시 선택 가능)" : "Drop photo(s) here or click to select")}
               </p>
-              <span className="text-[9px] text-gray-450 leading-normal font-light">
-                {language === "ko" ? "용량 압축 엔진을 거쳐, 대형 원본도 슬라브에 즉시 정합 등록됩니다." : "Images are automatically optimized to avoid local caching memory overflow."}
+              <span className="text-[9.5px] text-gray-500 leading-normal font-normal">
+                {language === "ko" 
+                  ? "※ JPG, PNG, WebP 지원 • 클립보드 복사 후 Ctrl+V 붙여넣기 지원 • 고화질 자동 압축 저장" 
+                  : "※ Supports JPG, PNG, WebP • Clipboard Ctrl+V paste supported • Auto-compressed"}
               </span>
             </div>
           </div>
         ) : (
-          <div className="p-4 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-center text-[10.5px] font-bold">
-            🔒 {language === "ko" ? "이미지 슬롯 한도 초과 (대표 포함 다중 총 5장)" : "Capped maximum physical slot capacity (5 photos limit)."}
+          <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-center text-[10.5px] font-bold">
+            🔒 {language === "ko" ? "사진 등록 한도(5장)가 가득 찼습니다. 기존 사진을 삭제하시면 추가할 수 있습니다." : "Maximum 5 photos reached."}
           </div>
         )}
 
-        {/* 3. Integrated Photo Slots Manager */}
+        {/* 2. Registered Photo Gallery */}
         <div className="space-y-2 text-left bg-white p-3 rounded-xl border border-gray-150 text-xs font-normal">
           <div className="flex justify-between items-center pb-1 border-b border-gray-100">
-            <span className="text-[10px] text-gray-450 font-extrabold uppercase tracking-wider block">
-              🖼️ {language === "ko" ? `등록된 사진 대장 (상황: ${currentTotal} / 5장)` : `Registered Slides Gallery (${currentTotal} of 5 images)`}
+            <span className="text-[10px] text-gray-600 font-extrabold uppercase tracking-wider block">
+              🖼️ {language === "ko" ? `등록된 사진 목록 (${currentTotal} / 5장)` : `Photo Slots (${currentTotal} of 5)`}
+            </span>
+            <span className="text-[9px] text-gray-400">
+              {language === "ko" ? "첫 번째 사진이 대표 이미지로 노출됩니다" : "First photo is primary thumbnail"}
             </span>
           </div>
 
           <div className="grid grid-cols-5 gap-2 pt-1">
             {/* Slot 1: Representative Main Photo */}
             <div className={`relative aspect-square rounded-lg overflow-hidden border-2 flex items-center justify-center group bg-slate-900 transition-all ${
-              formImageUrl && !IMAGE_PRESETS.some(p => p.url === formImageUrl) 
-                ? "border-amber-400 ring-2 ring-amber-300 shadow-sm"
+              currentForm.imageUrl && !IMAGE_PRESETS.some(p => p.url === currentForm.imageUrl) 
+                ? "border-amber-400 ring-2 ring-amber-300 shadow-xs"
                 : "border-dashed border-gray-300"
             }`}>
-              {formImageUrl ? (
+              {currentForm.imageUrl ? (
                 <>
-                  <img src={formImageUrl} className="w-full h-full object-contain pointer-events-none" referrerPolicy="no-referrer" />
-                  <div className="absolute top-0.5 left-0.5 bg-amber-400 text-slate-950 text-[7px] font-black px-1 rounded shadow-3xs uppercase tracking-tight z-10 scale-90 origin-top-left">
+                  <img src={currentForm.imageUrl} className="w-full h-full object-contain pointer-events-none" referrerPolicy="no-referrer" />
+                  <div className="absolute top-0.5 left-0.5 bg-amber-400 text-slate-950 text-[7.5px] font-black px-1 rounded shadow-3xs uppercase tracking-tight z-10 scale-90 origin-top-left">
                     ★ MAIN
                   </div>
 
-                  {/* Representative Photo Actions */}
+                  {/* Main Photo Actions */}
                   <div className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1 z-10">
                     <div className="flex justify-end">
                       <button
                         type="button"
                         onClick={() => {
-                          if (window.confirm(language === "ko" ? "메인 대표 사진을 삭제 처리하시겠습니까?" : "Omit main reference photo?")) {
-                            if (formImageUrls.length > 0) {
-                              setFormImageUrl(formImageUrls[0]);
-                              setFormImageUrls(formImageUrls.slice(1));
-                            } else {
-                              setFormImageUrl(IMAGE_PRESETS[0].url);
-                            }
+                          if (currentForm.imageUrls.length > 0) {
+                            setForm(prev => ({
+                              ...prev,
+                              imageUrl: prev.imageUrls[0],
+                              imageUrls: prev.imageUrls.slice(1)
+                            }));
+                          } else {
+                            setForm(prev => ({
+                              ...prev,
+                              imageUrl: IMAGE_PRESETS[0].url
+                            }));
                           }
                         }}
-                        className="bg-red-600 hover:bg-red-700 text-white rounded p-0.5 shadow transition-all cursor-pointer border-0"
-                        title="Delete"
+                        className="bg-red-600 hover:bg-red-700 text-white rounded p-1 shadow transition-all cursor-pointer border-0"
+                        title="사진 삭제"
                       >
                         <Trash2 className="w-3 h-3 text-white" />
                       </button>
@@ -1102,18 +1139,45 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
             </div>
 
             {/* Slots 2-5: Additional Extra Photos */}
-            {formImageUrls.map((url, uIdx) => (
-              <div key={uIdx} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center group bg-slate-900 transition-all hover:border-indigo-400">
+            {currentForm.imageUrls.map((url, uIdx) => (
+              <div key={uIdx} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center group bg-slate-900 transition-all hover:border-military-500">
                 <img src={url} className="w-full h-full object-contain pointer-events-none" referrerPolicy="no-referrer" />
                 
-                {/* Extra Photo Actions */}
-                <div className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1">
-                  <div className="flex justify-end">
+                {/* Extra Photo Actions: Set as Main OR Delete */}
+                <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1">
+                  <div className="flex justify-between items-center w-full">
                     <button
                       type="button"
-                      onClick={() => setFormImageUrls(formImageUrls.filter((_, idx) => idx !== uIdx))}
+                      onClick={() => {
+                        // Swap with main
+                        setForm(prev => {
+                          const oldMain = prev.imageUrl;
+                          const newExtras = prev.imageUrls.filter((_, idx) => idx !== uIdx);
+                          if (oldMain && !IMAGE_PRESETS.some(p => p.url === oldMain)) {
+                            newExtras.unshift(oldMain);
+                          }
+                          return {
+                            ...prev,
+                            imageUrl: url,
+                            imageUrls: newExtras
+                          };
+                        });
+                      }}
+                      className="bg-amber-500 hover:bg-amber-600 text-slate-950 text-[7px] font-bold px-1 py-0.5 rounded cursor-pointer border-0 shadow"
+                      title="대표 사진으로 설정"
+                    >
+                      대표지정
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setForm(prev => ({
+                          ...prev,
+                          imageUrls: prev.imageUrls.filter((_, idx) => idx !== uIdx)
+                        }));
+                      }}
                       className="bg-red-600 hover:bg-red-700 text-white rounded p-0.5 shadow transition-all cursor-pointer border-0"
-                      title="Delete"
+                      title="삭제"
                     >
                       <Trash2 className="w-3 h-3 text-white" />
                     </button>
@@ -1123,6 +1187,79 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
             ))}
           </div>
         </div>
+
+        {/* 3. Preset Selection Quick Buttons */}
+        <div className="bg-white p-2.5 rounded-xl border border-gray-150 text-xs">
+          <span className="block text-[9.5px] font-bold text-gray-500 mb-1.5">
+            🏷️ {language === "ko" ? "기본 수원지관 공장 프리셋 사진으로 즉시 적용" : "Apply Factory Preset Sample"}
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {IMAGE_PRESETS.map((preset, pIdx) => (
+              <button
+                key={pIdx}
+                type="button"
+                onClick={() => {
+                  setForm(prev => ({ ...prev, imageUrl: preset.url }));
+                }}
+                className={`text-[9.5px] px-2 py-1 rounded-lg border transition-all cursor-pointer font-medium ${
+                  currentForm.imageUrl === preset.url
+                    ? "bg-military-850 text-white border-military-850 font-bold"
+                    : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                }`}
+              >
+                {preset.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 4. Optional Cloud Drive Accordion */}
+        <div className="border border-gray-150 rounded-xl overflow-hidden bg-white">
+          <button
+            type="button"
+            onClick={() => setShowGdriveAdvanced(!showGdriveAdvanced)}
+            className="w-full flex items-center justify-between p-2.5 text-[10px] text-gray-500 hover:text-gray-900 bg-gray-50/50 hover:bg-gray-100/60 font-semibold cursor-pointer border-0"
+          >
+            <span className="flex items-center gap-1.5">
+              <Cloud className="w-3.5 h-3.5 text-gray-500" />
+              {language === "ko" ? "구글 드라이브 클라우드 연동 (선택 사항)" : "Google Drive Cloud Backup (Optional)"}
+            </span>
+            <span className="text-[9px] text-gray-400">{showGdriveAdvanced ? "▲ 닫기" : "▼ 열기"}</span>
+          </button>
+          
+          {showGdriveAdvanced && (
+            <div className="p-3 border-t border-gray-150 space-y-2 text-xs bg-white">
+              <p className="text-[10px] text-gray-600 leading-relaxed">
+                {language === "ko"
+                  ? "※ 로그인하지 않으셔도 모든 사진은 로컬 및 데이터베이스에 고화질로 100% 자동 저장됩니다. 구글 드라이브 폴더에도 동시에 복사본을 보관하고 싶으신 경우에만 연동해주세요."
+                  : "※ Direct upload works 100% without login. Link Google Drive only if you wish to store copies in Drive folder."}
+              </p>
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <span className="text-[10px] font-bold text-gray-700">
+                  {gdriveToken ? "🟢 구글 드라이브 연동됨" : "⚪ 구글 드라이브 미연동 (기본 동작 중)"}
+                </span>
+                {!gdriveToken ? (
+                  <button
+                    type="button"
+                    onClick={handleGdriveLogin}
+                    className="py-1 px-2.5 rounded-lg bg-military-850 hover:bg-military-900 text-white text-[10px] font-bold cursor-pointer transition-all border-0"
+                  >
+                    {language === "ko" ? "구글 계정 연동" : "Connect Google"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setGdriveToken(null)}
+                    className="py-1 px-2 text-[9px] bg-gray-100 hover:bg-gray-200 text-gray-600 rounded cursor-pointer border-0"
+                  >
+                    {language === "ko" ? "연동 해제" : "Disconnect"}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
       </div>
     );
   };
@@ -1805,20 +1942,20 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
             <div className="space-y-4 text-xs font-normal">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] text-gray-400 font-bold mb-1">제품코드 (ID)</label>
+                  <label className="block text-[10px] text-gray-400 font-bold mb-1">제품코드 (ID - 자동 채번)</label>
                   <input
                     type="text"
                     required
                     readOnly
-                    value={formId}
-                    className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-gray-100 outline-none text-gray-500 font-mono font-bold text-center"
+                    value={addFormData.id}
+                    className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-gray-100 outline-none text-military-900 font-mono font-black text-center text-xs tracking-wider cursor-not-allowed"
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] text-gray-400 font-bold mb-1">보유 상태 구분</label>
                   <select
-                    value={formCondition}
-                    onChange={(e) => setFormCondition(e.target.value)}
+                    value={addFormData.condition}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, condition: e.target.value }))}
                     className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-white outline-none cursor-pointer font-bold text-gray-700"
                   >
                     <option value="최우수">최우수 (Perfect)</option>
@@ -1836,8 +1973,8 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                   type="text"
                   required
                   placeholder="예: 특수 대경 고장력 보호 지관"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
+                  value={addFormData.name}
+                  onChange={(e) => setAddFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-white outline-none font-semibold text-gray-900"
                 />
               </div>
@@ -1849,8 +1986,8 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                     type="text"
                     required
                     placeholder="예: 76.2mm"
-                    value={formInnerDia}
-                    onChange={(e) => setFormInnerDia(e.target.value)}
+                    value={addFormData.innerDia}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, innerDia: e.target.value }))}
                     className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-white outline-none font-mono text-center font-bold"
                   />
                 </div>
@@ -1860,8 +1997,8 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                     type="text"
                     required
                     placeholder="예: 5.0mm"
-                    value={formThickness}
-                    onChange={(e) => setFormThickness(e.target.value)}
+                    value={addFormData.thickness}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, thickness: e.target.value }))}
                     className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-white outline-none font-mono text-center font-bold"
                   />
                 </div>
@@ -1871,8 +2008,8 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                     type="text"
                     required
                     placeholder="예: 1,200mm"
-                    value={formLength}
-                    onChange={(e) => setFormLength(e.target.value)}
+                    value={addFormData.length}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, length: e.target.value }))}
                     className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-white outline-none font-mono text-center font-bold"
                   />
                 </div>
@@ -1885,8 +2022,8 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                     type="number"
                     required
                     placeholder="예: 350"
-                    value={formQuantity}
-                    onChange={(e) => setFormQuantity(e.target.value)}
+                    value={addFormData.quantity}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, quantity: e.target.value }))}
                     className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-white outline-none font-mono font-bold"
                   />
                 </div>
@@ -1895,22 +2032,22 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                   <input
                     type="text"
                     placeholder="예: 상담 협의 / 특가 상담"
-                    value={formApproxPrice}
-                    onChange={(e) => setFormApproxPrice(e.target.value)}
+                    value={addFormData.approxPrice}
+                    onChange={(e) => setAddFormData(prev => ({ ...prev, approxPrice: e.target.value }))}
                     className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-white outline-none font-bold"
                   />
                 </div>
               </div>
 
-              {renderImageManager()}
+              {renderImageManagerForModal('add')}
 
               <div>
                 <label className="block text-[10px] text-gray-400 font-bold mb-1">제품 부가 상세 설명 (상세 팝업용)</label>
                 <textarea
                   rows={3}
                   placeholder="공정 세대, 방습 도공 사양, 내구성 및 적용 산업 등 상세한 가판 요건을 기록합니다."
-                  value={formDesc}
-                  onChange={(e) => setFormDesc(e.target.value)}
+                  value={addFormData.desc}
+                  onChange={(e) => setAddFormData(prev => ({ ...prev, desc: e.target.value }))}
                   className="block w-full py-2 px-3 border border-gray-200 rounded-xl bg-white outline-none resize-none"
                 />
               </div>
@@ -1927,7 +2064,7 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                   type="submit"
                   className="py-2.5 px-6 rounded-xl bg-military-850 hover:bg-military-900 text-white font-bold cursor-pointer shadow-sm border-0 bg-military-850"
                 >
-                  {language === "ko" ? "등록 완료" : "Add Sizing Specs"}
+                  {language === "ko" ? "신규 제품 추가 등록" : "Add Product Now"}
                 </button>
               </div>
             </div>
@@ -1968,15 +2105,15 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                     type="text"
                     required
                     readOnly
-                    value={formId}
+                    value={editFormData.id}
                     className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-gray-100 outline-none text-gray-500 font-mono font-bold text-center"
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] text-gray-400 font-bold mb-1">보유 상태 구분</label>
                   <select
-                    value={formCondition}
-                    onChange={(e) => setFormCondition(e.target.value)}
+                    value={editFormData.condition}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, condition: e.target.value }))}
                     className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-white outline-none cursor-pointer font-bold text-gray-700"
                   >
                     <option value="최우수">최우수 (Perfect)</option>
@@ -1993,8 +2130,8 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                 <input
                   type="text"
                   required
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-white outline-none font-bold text-gray-950 animate-none"
                 />
               </div>
@@ -2005,8 +2142,8 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                   <input
                     type="text"
                     required
-                    value={formInnerDia}
-                    onChange={(e) => setFormInnerDia(e.target.value)}
+                    value={editFormData.innerDia}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, innerDia: e.target.value }))}
                     className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-white outline-none font-mono text-center font-bold"
                   />
                 </div>
@@ -2015,8 +2152,8 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                   <input
                     type="text"
                     required
-                    value={formThickness}
-                    onChange={(e) => setFormThickness(e.target.value)}
+                    value={editFormData.thickness}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, thickness: e.target.value }))}
                     className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-white outline-none font-mono text-center font-bold"
                   />
                 </div>
@@ -2025,8 +2162,8 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                   <input
                     type="text"
                     required
-                    value={formLength}
-                    onChange={(e) => setFormLength(e.target.value)}
+                    value={editFormData.length}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, length: e.target.value }))}
                     className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-white outline-none font-mono text-center font-bold"
                   />
                 </div>
@@ -2038,8 +2175,8 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                   <input
                     type="text"
                     required
-                    value={formQuantity}
-                    onChange={(e) => setFormQuantity(e.target.value)}
+                    value={editFormData.quantity}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, quantity: e.target.value }))}
                     className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-white outline-none font-mono font-bold"
                   />
                 </div>
@@ -2047,21 +2184,21 @@ export default function StockSalesView({ onTabChange, onQuotePrefill }: StockSal
                   <label className="block text-[10px] text-gray-400 font-bold mb-1">공급가 단가 문구</label>
                   <input
                     type="text"
-                    value={formApproxPrice}
-                    onChange={(e) => setFormApproxPrice(e.target.value)}
+                    value={editFormData.approxPrice}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, approxPrice: e.target.value }))}
                     className="block w-full py-2.5 px-3 border border-gray-200 rounded-xl bg-white outline-none font-bold"
                   />
                 </div>
               </div>
 
-              {renderImageManager()}
+              {renderImageManagerForModal('edit')}
 
               <div>
                 <label className="block text-[10px] text-gray-400 font-bold mb-1">제품 부가 지안 상세 설명</label>
                 <textarea
                   rows={3}
-                  value={formDesc}
-                  onChange={(e) => setFormDesc(e.target.value)}
+                  value={editFormData.desc}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, desc: e.target.value }))}
                   className="block w-full py-2 px-3 border border-gray-200 rounded-xl bg-white outline-none resize-none font-sans"
                 />
               </div>
