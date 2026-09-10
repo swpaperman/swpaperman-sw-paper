@@ -10,7 +10,35 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
+app.use(express.static(path.join(process.cwd(), "public")));
+
+// Endpoint to directly upload and replace slide images (e.g. 3.png)
+app.post("/api/upload-slide-image", async (req, res) => {
+  try {
+    const { filename, base64Data } = req.body;
+    if (!filename || !base64Data) {
+      return res.status(400).json({ error: "filename and base64Data are required" });
+    }
+    const cleanBase64 = base64Data.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(cleanBase64, "base64");
+    const safeFilename = path.basename(filename);
+    const publicPath = path.join(process.cwd(), "public", safeFilename);
+    const fs = await import("fs");
+    await fs.promises.writeFile(publicPath, buffer);
+    
+    const distDir = path.join(process.cwd(), "dist");
+    if (fs.existsSync(distDir)) {
+      await fs.promises.writeFile(path.join(distDir, safeFilename), buffer);
+    }
+    
+    return res.json({ success: true, url: `/${safeFilename}?t=${Date.now()}` });
+  } catch (err: any) {
+    console.error("Error saving image:", err);
+    return res.status(500).json({ error: err.message || "Failed to save image" });
+  }
+});
 
 // Initialize Gemini SDK with telemetry header
 const apiKey = process.env.GEMINI_API_KEY;

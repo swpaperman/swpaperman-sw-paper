@@ -163,7 +163,8 @@ export const AMMO_PRODUCT_SLIDES = [
     sub: "KDS & MIL-SPEC 규격 기반 다품종 탄약지환통 라인업",
     tag: "KDS / MIL-SPEC",
     spec: "KC521 • KC511 • KC18 • KC266 • KC01 외 전 계열",
-    url: "https://lh3.googleusercontent.com/d/1tXrnyb3Y_ApswrRWveDzk5O9ua8F9gqV",
+    url: "/ammunition_fc.png",
+    fallbackUrl: "/3.png",
     desc: "155mm, 105mm, 박격포탄, 유도탄용 국방규격 고강도 탄약지환통"
   },
   {
@@ -205,6 +206,15 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
   const [currentAmmoIdx, setCurrentAmmoIdx] = useState(0);
   const [isAmmoPaused, setIsAmmoPaused] = useState(false);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
+  const [slideImgTimestamp] = useState<number>(() => Date.now());
+
+  // Helper to append timestamp for dynamically replaced images
+  const getSlideImageUrl = (url: string) => {
+    if (url.startsWith("/ammunition_fc.png") || url.startsWith("/3.png") || url.startsWith("/3.jpg")) {
+      return `${url.split("?")[0]}?v=${slideImgTimestamp}`;
+    }
+    return url;
+  };
 
   // Auto-update news from localStorage if updated in another tab or sheet sync
   useEffect(() => {
@@ -482,9 +492,15 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                         className="w-full h-full flex items-center justify-center p-2 relative"
                       >
                         <img 
-                          src={activeAmmoSlide.url} 
+                          src={getSlideImageUrl(activeAmmoSlide.url)} 
                           alt={activeAmmoSlide.title} 
                           referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            const slideWithFallback = activeAmmoSlide as { fallbackUrl?: string };
+                            if (slideWithFallback.fallbackUrl && e.currentTarget.src !== slideWithFallback.fallbackUrl) {
+                              e.currentTarget.src = slideWithFallback.fallbackUrl;
+                            }
+                          }}
                           className="w-full h-full object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.8)] group-hover/canvas:scale-[1.03] transition-transform duration-500"
                         />
                       </motion.div>
@@ -1547,9 +1563,15 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                 <AnimatePresence mode="wait">
                   <motion.img
                     key={activeAmmoSlide.id}
-                    src={activeAmmoSlide.url}
+                    src={getSlideImageUrl(activeAmmoSlide.url)}
                     alt={activeAmmoSlide.title}
                     referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const slideWithFallback = activeAmmoSlide as { fallbackUrl?: string };
+                      if (slideWithFallback.fallbackUrl && e.currentTarget.src !== slideWithFallback.fallbackUrl) {
+                        e.currentTarget.src = slideWithFallback.fallbackUrl;
+                      }
+                    }}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.05 }}
@@ -1594,9 +1616,15 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
                       }`}
                     >
                       <img
-                        src={slide.url}
+                        src={getSlideImageUrl(slide.url)}
                         alt={slide.title}
                         referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          const slideWithFallback = slide as { fallbackUrl?: string };
+                          if (slideWithFallback.fallbackUrl && e.currentTarget.src !== slideWithFallback.fallbackUrl) {
+                            e.currentTarget.src = slideWithFallback.fallbackUrl;
+                          }
+                        }}
                         className="w-full h-full object-cover"
                       />
                     </button>
