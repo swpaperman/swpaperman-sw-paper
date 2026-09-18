@@ -22,6 +22,7 @@ export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 const provider = new GoogleAuthProvider();
 provider.addScope("https://www.googleapis.com/auth/drive.file");
 provider.addScope("https://www.googleapis.com/auth/spreadsheets");
+provider.setCustomParameters({ prompt: "select_account" });
 
 let isSigningIn = false;
 let cachedAccessToken: string | null = null;
@@ -532,7 +533,7 @@ export async function syncInquiryToWorkspace(
 export async function syncBulkDatabaseToWorkspace(
   accessToken: string,
   inquiries: InquiryData[]
-): Promise<{ success: boolean; count: number }> {
+): Promise<{ success: boolean; count: number; spreadsheetId?: string }> {
   try {
     const spreadsheetId = await getOrCreateSpreadsheet(accessToken);
     const folderId = await getOrCreateFolder(accessToken, "수원지관산업_첨부파일");
@@ -555,7 +556,7 @@ export async function syncBulkDatabaseToWorkspace(
 
     const unSyncedInquiries = inquiries.filter(inq => !existingIds.has(inq.id));
     if (unSyncedInquiries.length === 0) {
-      return { success: true, count: 0 };
+      return { success: true, count: 0, spreadsheetId };
     }
 
     // Process and push sequentially to avoid Google API rate limiting
@@ -615,7 +616,7 @@ export async function syncBulkDatabaseToWorkspace(
       }
     }
 
-    return { success: true, count: syncedCount };
+    return { success: true, count: syncedCount, spreadsheetId };
   } catch (error) {
     console.error("syncBulkDatabaseToWorkspace Error:", error);
     return { success: false, count: 0 };

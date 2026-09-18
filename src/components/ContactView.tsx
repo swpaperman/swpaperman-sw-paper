@@ -30,7 +30,9 @@ import {
   Cloud,
   RefreshCw,
   Loader2,
-  LogOut
+  LogOut,
+  FileSpreadsheet,
+  ExternalLink
 } from "lucide-react";
 import { User as FirebaseUser } from "firebase/auth";
 import {
@@ -38,6 +40,7 @@ import {
   googleSignIn,
   logout,
   getAccessToken,
+  getOrCreateSpreadsheet,
   syncInquiryToWorkspace,
   syncBulkDatabaseToWorkspace
 } from "../lib/googleWorkspace";
@@ -234,6 +237,9 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
   const [googleToken, setGoogleToken] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [autoSyncEnabled, setAutoSyncEnabled] = useState<boolean>(true);
+  const [spreadsheetId, setSpreadsheetId] = useState<string>(() => {
+    return localStorage.getItem("suwon_inquiries_spreadsheet_id") || "";
+  });
 
   // Admin states
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState<boolean>(false);
@@ -456,22 +462,36 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
       if (res) {
         setGoogleUser(res.user);
         setGoogleToken(res.accessToken);
+
+        // Fetch or create the specific inquiries spreadsheet right away
+        let targetSheetId = "";
+        try {
+          targetSheetId = await getOrCreateSpreadsheet(res.accessToken);
+          if (targetSheetId) {
+            setSpreadsheetId(targetSheetId);
+            localStorage.setItem("suwon_inquiries_spreadsheet_id", targetSheetId);
+          }
+        } catch (sheetErr) {
+          console.warn("Spreadsheet lookup deferred:", sheetErr);
+        }
+
         alert(
           language === "ko"
-            ? `구글 계정 연동 성공!\n\n${res.user.displayName || res.user.email} 계정으로 구글 드라이브 및 스프레드시트 쓰기 연동이 성공적으로 활성화되었습니다.`
+            ? `구글 계정 연동 성공!\n\n${res.user.displayName || res.user.email} 계정으로 구글 드라이브 및 스프레드시트 연동이 활성화되었습니다.\n'구글 스프레드시트 이동' 버튼을 통해 즉시 대장을 확인하실 수 있습니다.`
             : language === "tr"
               ? `Google Bağlantısı Başarılı!\n\n${res.user.displayName || res.user.email} hesabı ile Google Drive ve Google E-Tablolar entegrasyonu aktif edilmiştir.`
               : `Google Account Synced Successfully!\n\nWrite access to Google Drive and Sheets with ${res.user.displayName || res.user.email} is active.`
         );
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Google Workspace Sign-in failed:", err);
+      const errMsg = err?.message || String(err);
       alert(
         language === "ko"
-          ? "구글 연동 로그인에 실패했거나 취소되었습니다.\n비로그인 상태에서도 일반 상담 신청 전산 등록은 가능합니다."
+          ? `구글 연동 로그인에 실패했습니다.\n사유: ${errMsg}\n\n브라우저 팝업 차단이 활성화되어 있는지 확인 후 다시 시도해주세요.`
           : language === "tr"
-            ? "Google girişi başarısız oldu veya iptal edildi.\nUğramadan da yerel olarak teklif talep formu gönderebilirsiniz."
-            : "Google login failed or was cancelled.\nYou can still submit inquiry proposals without signing in."
+            ? `Google girişi başarısız oldu: ${errMsg}`
+            : `Google login failed: ${errMsg}`
       );
     } finally {
       setIsSyncing(false);
@@ -534,9 +554,13 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
     try {
       const res = await syncBulkDatabaseToWorkspace(googleToken, allInquiries);
       if (res.success) {
+        if (res.spreadsheetId) {
+          setSpreadsheetId(res.spreadsheetId);
+          localStorage.setItem("suwon_inquiries_spreadsheet_id", res.spreadsheetId);
+        }
         alert(
           language === "ko"
-            ? `동기화 성공!\n\n새로운 지관 주문 내역 ${res.count}건이 구글 스프레드시트 및 드라이브로 완벽히 백업 백라이트 동결 동기화되었습니다.`
+            ? `동기화 성공!\n\n새로운 지관 주문 내역 ${res.count}건이 구글 스프레드시트('수원지관산업_상담신청_및_맞춤수주_대장') 및 드라이브로 완벽히 백업 동기화되었습니다.\n'구글 스프레드시트 이동'을 통해 바로 확인하실 수 있습니다.`
             : language === "tr"
               ? `Eşitleme Başarılı!\n\nYeni eklenen ${res.count} talep Google E-Tablolar ve Drive'a aktarıldı.`
               : `Sync Successful!\n\n${res.count} new inquiries have been successfully archived to Sheets and Drive.`
@@ -1550,13 +1574,15 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
                       <div className="md:col-span-6 flex justify-end gap-2 shrink-0">
                         {/* Open spreadsheet link */}
                         <a
-                          href="https://docs.google.com/spreadsheets"
+                          href={spreadsheetId ? `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit` : "https://docs.google.com/spreadsheets"}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="py-2 px-3 rounded-lg bg-military-850 hover:bg-military-800 text-kraft-350 text-2xs font-bold duration-150 flex items-center gap-1 border border-military-750"
+                          className="py-2 px-3.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 text-2xs font-bold duration-150 flex items-center gap-1.5 border border-emerald-700/60 shadow-sm"
+                          title={spreadsheetId ? "수원지관산업 수주대장 구글 스프레드시트 바로가기" : "구글 스프레드시트 열기"}
                         >
-                          <FileText className="w-3.5 h-3.5 text-kraft-400" />
-                          구글 스프레드시트 이동
+                          <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>구글 스프레드시트 열기</span>
+                          <ExternalLink className="w-3 h-3 text-emerald-400/80 ml-0.5" />
                         </a>
 
                         {/* Bulk database sync backup */}

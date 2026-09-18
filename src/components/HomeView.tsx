@@ -163,8 +163,8 @@ export const AMMO_PRODUCT_SLIDES = [
     sub: "KDS & MIL-SPEC 규격 기반 다품종 탄약지환통 라인업",
     tag: "KDS / MIL-SPEC",
     spec: "KC521 • KC511 • KC18 • KC266 • KC01 외 전 계열",
-    url: "/ammunition_fc.png",
-    fallbackUrl: "/3.png",
+    url: "/ammunition_fc2.png",
+    fallbackUrl: "/ammunition_fc.png",
     desc: "155mm, 105mm, 박격포탄, 유도탄용 국방규격 고강도 탄약지환통"
   },
   {
@@ -210,7 +210,7 @@ export default function HomeView({ onTabChange }: HomeViewProps) {
 
   // Helper to append timestamp for dynamically replaced images
   const getSlideImageUrl = (url: string) => {
-    if (url.startsWith("/ammunition_fc.png") || url.startsWith("/3.png") || url.startsWith("/3.jpg")) {
+    if (url.startsWith("/ammunition_fc") || url.startsWith("/3.png") || url.startsWith("/3.jpg")) {
       return `${url.split("?")[0]}?v=${slideImgTimestamp}`;
     }
     return url;
