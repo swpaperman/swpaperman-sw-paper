@@ -32,7 +32,10 @@ import {
   Loader2,
   LogOut,
   FileSpreadsheet,
-  ExternalLink
+  ExternalLink,
+  ShieldAlert,
+  Copy,
+  Check
 } from "lucide-react";
 import { User as FirebaseUser } from "firebase/auth";
 import {
@@ -240,6 +243,8 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
   const [spreadsheetId, setSpreadsheetId] = useState<string>(() => {
     return localStorage.getItem("suwon_inquiries_spreadsheet_id") || "";
   });
+  const [showDomainGuideModal, setShowDomainGuideModal] = useState<boolean>(false);
+  const [copiedDomain, setCopiedDomain] = useState<string | null>(null);
 
   // Admin states
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState<boolean>(false);
@@ -486,13 +491,17 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
     } catch (err: any) {
       console.error("Google Workspace Sign-in failed:", err);
       const errMsg = err?.message || String(err);
-      alert(
-        language === "ko"
-          ? `구글 연동 로그인에 실패했습니다.\n사유: ${errMsg}\n\n브라우저 팝업 차단이 활성화되어 있는지 확인 후 다시 시도해주세요.`
-          : language === "tr"
-            ? `Google girişi başarısız oldu: ${errMsg}`
-            : `Google login failed: ${errMsg}`
-      );
+      if (err?.code === "auth/unauthorized-domain" || errMsg.includes("unauthorized-domain")) {
+        setShowDomainGuideModal(true);
+      } else {
+        alert(
+          language === "ko"
+            ? `구글 연동 로그인에 실패했습니다.\n사유: ${errMsg}\n\n브라우저 팝업 차단이 활성화되어 있는지 확인 후 다시 시도해주세요.`
+            : language === "tr"
+              ? `Google girişi başarısız oldu: ${errMsg}`
+              : `Google login failed: ${errMsg}`
+        );
+      }
     } finally {
       setIsSyncing(false);
     }
@@ -1870,6 +1879,100 @@ export default function ContactView({ prefilledProduct, prefilledSpecs, onClearP
               </div>
             )}
 
+          </div>
+        )}
+
+        {/* Firebase Authorized Domain Guide Modal */}
+        {showDomainGuideModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-military-900 border border-kraft-550/40 rounded-2xl max-w-xl w-full p-6 shadow-2xl text-left space-y-4">
+              <div className="flex items-start gap-3 pb-3 border-b border-military-800">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 shrink-0">
+                  <ShieldAlert className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-100 flex items-center gap-2">
+                    <span>구글 로그인 도메인 승인 안내</span>
+                    <span className="text-[11px] font-mono font-normal bg-military-800 text-kraft-350 px-2 py-0.5 rounded border border-military-700">
+                      auth/unauthorized-domain
+                    </span>
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                    현재 맞춤 도메인(<span className="text-kraft-300 font-mono font-bold">{typeof window !== "undefined" ? window.location.hostname : "www.sw-paper.com"}</span>)이 Firebase의 <strong>[승인된 도메인]</strong> 목록에 등록되지 않아 구글에서 로그인을 차단했습니다.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3 bg-military-950/70 p-4 rounded-xl border border-military-800 text-xs text-gray-300">
+                <p className="font-bold text-kraft-400 flex items-center gap-1.5">
+                  <span>해결 방법 (Firebase 콘솔에서 30초 내 완료)</span>
+                </p>
+                
+                <ol className="list-decimal list-inside space-y-2.5 text-gray-300 leading-relaxed">
+                  <li>
+                    아래 버튼을 눌러 <strong>Firebase 인증 설정</strong> 페이지로 이동합니다.
+                    <div className="mt-1.5 ml-4">
+                      <a
+                        href="https://console.firebase.google.com/project/gen-lang-client-0021919130/authentication/settings"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 py-1.5 px-3 bg-kraft-500 hover:bg-kraft-600 text-gray-950 font-bold rounded-lg text-xs transition-colors shadow"
+                      >
+                        <span>Firebase 콘솔 설정 열기</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                  </li>
+                  <li>
+                    페이지 아래쪽의 <strong>[승인된 도메인 (Authorized domains)]</strong> 섹션으로 스크롤합니다.
+                  </li>
+                  <li>
+                    <strong>[도메인 추가 (Add domain)]</strong> 버튼을 클릭하고 아래 2개 도메인을 각각 등록합니다:
+                    <div className="mt-2 ml-4 space-y-1.5 font-mono">
+                      {["sw-paper.com", "www.sw-paper.com"].map((dom) => (
+                        <div key={dom} className="flex items-center justify-between bg-military-900 px-3 py-1.5 rounded-lg border border-military-750">
+                          <span className="text-kraft-300 font-bold text-2xs">{dom}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(dom);
+                              setCopiedDomain(dom);
+                              setTimeout(() => setCopiedDomain(null), 2000);
+                            }}
+                            className="text-[11px] text-gray-400 hover:text-kraft-350 flex items-center gap-1 px-2 py-0.5 rounded bg-military-800 border border-military-700 hover:border-kraft-500/50 cursor-pointer transition-colors"
+                          >
+                            {copiedDomain === dom ? (
+                              <>
+                                <Check className="w-3 h-3 text-emerald-400" />
+                                <span className="text-emerald-400 font-sans">복사됨</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span className="font-sans">복사</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </li>
+                  <li>
+                    도메인 추가 후, 이 창을 닫고 다시 <strong>[구글 계정 연동 로그인]</strong>을 클릭하면 즉시 연동됩니다!
+                  </li>
+                </ol>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDomainGuideModal(false)}
+                  className="py-2 px-4 rounded-lg bg-military-800 hover:bg-military-750 text-gray-200 text-xs font-bold transition-all cursor-pointer border border-military-700"
+                >
+                  닫기 (설정 완료 후 재시도)
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
